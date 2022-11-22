@@ -1,0 +1,63 @@
+## RESET ANYTHING ABOVE IN HIERARCHY
+!*
+!.*
+!**/*
+!**/.*
+!typings
+
+## FOLDERS and FOLDER infos files
+node_modules/
+jspm_packages/
+web_modules/
+.directory
+.history
+.DS_Store
+.tmp/
+temp/
+build/
+downloads
+
+## ROOT FOLDERS
+/build
+/cache
+/coverage
+/keys
+/log-out
+/obj
+/out
+/targetSelection
+/docker/dist
+/docker/out
+/docker/typings
+
+## FILES
+*.zwc
+*.zwc
+*.env
+nohup.out
+env.txt
+listings.txt
+listing.txt
+*listing*.txt
+**/*list.txt
+*.cpuprofile
+
+## Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+~*
+.~*
+._*
+__pycache__
+__pycache__/
+_Chutzpah*
+_NCrunch_*
+_pkginfo.txt
+_Pvt_Extensions
+_ReSharper*/
+_TeamCity*
+_UpgradeReport_Files/
+!example.log
