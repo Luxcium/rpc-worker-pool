@@ -1,4 +1,4 @@
-ARG version=18.12
+ARG version=19
 
 # as builder
 FROM node

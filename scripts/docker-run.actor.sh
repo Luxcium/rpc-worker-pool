@@ -1,7 +1,7 @@
 #!/usr/bin/bash
 
 echo DESTINATION_PATH="${DESTINATION_PATH:="$(pwd)/docker/downloads"}"
-docker run --rm -it \
+docker run --rm -t \
   --network networkOne \
   --stop-signal 'SIGKILL' \
   --user 1000 --volume "$DESTINATION_PATH":"/downloads" \

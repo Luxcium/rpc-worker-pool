@@ -30,6 +30,7 @@ function randomActor() {
 // ++ HTTP_Server ----------------------------------------------------
 void createHTTP_Server((req, res): any => {
   message_id++;
+  // let current_message_id;
 
   if (actors.size === 0) return res.end('ERROR: EMPTY ACTOR POOL');
 
@@ -128,12 +129,12 @@ void actors.add(async (data: any) => {
       }) + '\0\n\0';
 
     console.log(
-      'actors.add',
+      'actors.add!',
       {
         jsonrpc: '2.0',
         ...replyObject,
       },
-      'performance: ' + chalk.yellow(time) + ' ms\n'
+      'performance: ' + chalk.yellow(time) + ' ms'
     );
 
     void messages.get(data.id).end(reply);

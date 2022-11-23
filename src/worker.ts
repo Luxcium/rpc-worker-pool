@@ -17,7 +17,7 @@ try {
         };
 
         try {
-          const resultRPC = await commands[command_name](...params);
+          const resultRPC = await commands[command_name](job_id, ...params);
           return { ...messageRPC, result: resultRPC };
         } catch (error: any) {
           const errorRPC = {

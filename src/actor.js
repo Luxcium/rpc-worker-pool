@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 'use strict';
+import chalk from 'chalk';
 import { connect } from 'net';
-
 // import { Strategies } from './consts';
 import { RpcWorkerPool } from './RpcWorkerPool';
 
@@ -25,18 +25,28 @@ void upstreamSocket.on('error', error => {
   console.error(error);
 });
 
+let last_data_string = '';
+let actor_id = 0;
 void upstreamSocket.on('data', raw_data => {
-  console.log('raw_data:', String(raw_data));
+  // console.log('raw_data:', String(raw_data));
 
   const data_string = String(raw_data).split('\0\n\0');
-  const last_data_string = data_string.slice(-1)[0];
-  if (last_data_string.length > 0) {
-    console.log('last_data_string.length > 0', last_data_string);
-  }
+  last_data_string = data_string.slice(-1)[0];
+
   data_string.slice(0, -1).forEach(async chunk => {
-    // BUG:~ Must add last non empty chunk first prior to the next chunk
-    console.log('chunk:', chunk);
     try {
+      if (last_data_string.length > 0) {
+        console.error(
+          '\n\n\nlast_data_string.length > 0',
+          last_data_string,
+          '\n\n\n'
+        );
+        throw new Error(
+          "String(raw_data).split('\0\n\0') ERROR: last_data_string.length > 0"
+        );
+      }
+
+      // BUG:~ Must add last non empty chunk first prior to the next chunk
       const data = JSON.parse(chunk);
       const timeBefore = performance.now();
       const result = await getWorker().exec(
@@ -45,23 +55,41 @@ void upstreamSocket.on('data', raw_data => {
         ...data.args
       );
       const timeAfter = performance.now();
+      const delay = timeAfter - timeBefore;
+      const time = Math.round(delay * 100) / 100;
 
-      console.log('remote.actors.add', {
-        id: data.id,
-        performance: timeAfter - timeBefore,
-        pid: 'actor:' + process.pid,
-      });
-
+      // console.log('remote.actors.add', {
+      //   id: data.id,
+      //   performance: timeAfter - timeBefore,
+      //   pid: 'actor:' + process.pid,
+      // });
+      console.log(
+        'remote.actors.add',
+        {
+          jsonrpc: '2.0',
+          id: data.id,
+          pid: `actor(${++actor_id}) at process: ${process.pid}`,
+        },
+        'performance: ' + chalk.yellow(time) + ' ms'
+      );
       const jsonRpcMessage = {
         jsonrpc: '2.0',
         id: data.id,
         result,
+        performance: delay,
         pid: 'actor:' + process.pid,
       };
 
       void upstreamSocket.write(JSON.stringify(jsonRpcMessage) + '\0\n\0');
     } catch (err) {
+      // const jsonRpcMessage = {
+      //   jsonrpc: '2.0',
+      //   id: data.id,
+      //   error: { err },
+      //   pid: 'actor:' + process.pid,
+      // };
       console.error(err);
+      // void upstreamSocket.write(JSON.stringify(jsonRpcMessage) + '\0\n\0');
     }
   });
 });

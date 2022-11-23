@@ -91,9 +91,7 @@ export class RpcWorkerPool {
     }
 
     this.versosity &&
-      console.log(
-        `\n\nWorker: ${worker_id + 1} Message id: ${message_id || 0}\n`
-      );
+      console.log(`Worker: ${worker_id + 1} Message id: ${message_id || 0}`);
 
     return this.workers[worker_id];
   }
