@@ -10,14 +10,14 @@ export async function wget(
   const destinationPath = `/downloads/${decodeURIComponent(destination)}`;
   const execCommand = `/usr/bin/wget --debug -nc "${sourceUrl}" -P "${destinationPath}"`;
   // BUG: Debbuging using a temporary halt on this function call....
-  promisify(exec);
-  execCommand;
-  {
-    shell;
-  }
+  // promisify(exec);
+  // execCommand;
+  // {
+  //   shell;
+  // }
   // console.log({ destination });
-  return 'dummy load';
+  // return 'dummy load';
   // FIX: Debbuging using a temporary halt on this function call....
 
-  // return promisify(exec)(execCommand, { shell });
+  return promisify(exec)(execCommand, { shell });
 }
