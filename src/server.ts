@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 export {};
 import chalk from 'chalk';
+import { existsSync } from 'node:fs';
 import { createServer as createHTTP_Server } from 'node:http';
 import { createServer as createTCP_Server } from 'node:net';
 import { isStrategy, strategies } from './commands';
@@ -16,7 +17,10 @@ const VERBOSE1 = true;
 const [, , web_host, actor_host, threads_, strategy_] = process.argv;
 const [web_hostname, web_port] = (web_host || '').split(':');
 const [actor_hostname, actor_port] = (actor_host || '').split(':');
-const workerScriptFileUri = `${__dirname}/worker.ts`;
+// const workerScriptFileUri = `${__dirname}/worker.ts`;
+const workerScriptFileUri = `${__dirname}/worker.${
+  existsSync(`${__dirname}/worker.ts`) ? 'ts' : 'js'
+}`;
 const threads = Number(threads_ || 0);
 const strategy = isStrategy(strategy_) ? strategy_ : strategies.roundrobin;
 

@@ -3,21 +3,6 @@ import { cpus } from 'os';
 import { Worker } from 'worker_threads';
 import { strategies, supportedStrategies, type Strategies } from './commands';
 
-// const { Worker } = require('worker_threads');
-
-new Worker(
-  `
-  require('ts-node/register');
-  require(require('worker_threads').workerData.runThisFileInTheWorker);
-`,
-  {
-    eval: true,
-    workerData: {
-      runThisFileInTheWorker: '/path/to/worker-script.ts',
-    },
-  }
-);
-
 const VERBOSE = false;
 const CORES = cpus().length;
 
@@ -108,6 +93,7 @@ export class RpcWorkerPool {
           eval: true,
           workerData: {
             runThisFileInTheWorker: path, // '/path/to/worker-script.ts'
+            workerId: worker_id,
           },
         }
       );
@@ -231,3 +217,46 @@ export default RpcWorkerPool;
 /*  permissions@oreilly.com.                                        */
 /*                                                                  */
 /* **************************************************************** */
+
+// chat gpt code analysis
+/*
+Sure, here's my review of /projects/monorepo-one/services/rpc-worker-pool/src/RpcWorkerPool.ts:
+
+Best Practices:
+The class is well-structured and follows the principles of SOLID design.
+The code is modular, with clear separation of concerns.
+The class uses a factory pattern to create worker threads.
+The code makes use of async/await and Promises, making the code more readable and easier to reason about.
+Resilience:
+The worker pool is designed to be resilient to failures of worker threads. It tracks in-flight commands, and can re-assign work to a different thread if one thread fails.
+The class uses error handling to manage unexpected events.
+Robustness:
+The worker pool is designed to be robust, with the ability to handle large numbers of requests in parallel.
+The class has been designed to prevent race conditions when multiple requests are being handled at once.
+The worker pool is designed to work with any script that can be run in a worker thread.
+Security:
+The worker pool does not perform any unsafe operations, and is designed to be secure.
+Maintainability:
+The code is well-structured and easy to read.
+The class follows best practices, which makes it easier to maintain.
+The code is modular and has clear separation of concerns.
+Testability:
+The worker pool is designed to be easily testable, with the ability to mock worker threads and commands.
+The code uses clear interfaces, making it easy to write tests for individual components.
+Overall, I would say that /projects/monorepo-one/services/rpc-worker-pool/src/RpcWorkerPool.ts is well-designed and well-implemented, with a focus on modularity, testability, and resilience. It follows best practices, and is secure, robust, and maintainable.
+
+TODO:
+
+Best practice: The use of eval in the Worker constructor is generally not considered a best practice, as it can introduce security risks. It is also better to avoid eval when possible since it can make code more difficult to read and debug. Instead, it is recommended to pass the script to execute as a separate file.
+
+Resilience: The RpcWorkerPool class could be made more resilient to worker thread failures. For example, it could monitor the status of worker threads and attempt to restart them if they fail.
+
+Robustness: The RpcWorkerPool class currently does not handle errors that may occur during command execution. If a command fails on a worker thread, the pool should be able to handle the error and return an appropriate response to the caller.
+
+Security: As mentioned previously, the use of eval in the Worker constructor can introduce security risks. It is important to ensure that any code executed on the worker thread is safe and does not expose the main thread to any security vulnerabilities.
+
+Maintainability: The RpcWorkerPool class could be made more maintainable by adding documentation and improving the readability of the code. Additionally, it could benefit from better code organization, such as separating the RpcWorkerPool class into smaller, more focused classes.
+
+Testability: To make the RpcWorkerPool class more testable, it could be useful to create unit tests for the individual methods and functions. This would ensure that any changes made to the code do not introduce new bugs or break existing functionality. Additionally, the class could be designed with dependency injection in mind, which would make it easier to mock dependencies during testing.
+
+*/
