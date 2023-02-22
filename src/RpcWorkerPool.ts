@@ -1,37 +1,118 @@
 'use strict';
 import { cpus } from 'os';
 import { Worker } from 'worker_threads';
+import { strategies, supportedStrategies, type Strategies } from './commands';
+
+// const { Worker } = require('worker_threads');
+
+new Worker(
+  `
+  require('ts-node/register');
+  require(require('worker_threads').workerData.runThisFileInTheWorker);
+`,
+  {
+    eval: true,
+    workerData: {
+      runThisFileInTheWorker: '/path/to/worker-script.ts',
+    },
+  }
+);
 
 const VERBOSE = false;
 const CORES = cpus().length;
-// type Strategies = 'roundrobin' | 'random' | 'leastbusy';
-const STRATEGIES = new Set<string>(['roundrobin', 'random', 'leastbusy']);
+
+/**
+ * Manages a pool of worker threads that can execute remote procedure calls (RPCs) on behalf of the main thread.
+ * Will be used as an import to the server.ts file. Ultimately, this should be used to create a pool of worker threads.
+ * @remarks
+ * This class is intended to be used by the main thread of an application.
+ * It creates a pool of worker threads that can execute remote procedure calls (RPCs) on behalf of the main thread.
+ */
 export class RpcWorkerPool {
+  /**
+   * The number of worker threads in the pool. Defaults to the number of CPU cores.
+   */
   private size: number;
-  private strategy: string;
-  private versosity: boolean;
+  /**
+   * The strategy used to allocate tasks to worker threads. Defaults to 'leastbusy'.
+   * See {@link Strategies} for supported strategies.
+   */
+  private strategy: Strategies;
+  /**
+   * A boolean indicating whether logging is enabled. Defaults to false.
+   * When logging is enabled, the pool will log messages to the console.
+   */
+  private verbosity: boolean;
+  /**
+   * An index used to implement round-robin scheduling of tasks. This value is incremented
+   * with each call to `scheduleTask()` and is used to select a worker thread to execute the task.
+   * It is also used to correlate the result of a command execution with the original command.
+   * Each worker thread maintains a map of its in-flight commands, which is used to track
+   * the progress of the commands.
+   */
   private rr_index: number;
+  /**
+   * The ID of the next command execution. This value is incremented with each call to
+   * `scheduleTask()` and is used to track which worker thread is executing a given command.
+   * It is also used to correlate the result of a command execution with the original command.
+   * Each worker thread maintains a map of its in-flight commands, which is used to track
+   * the progress of the commands.
+   * The in-flight commands map is keyed by the `job_id` of the command.
+   * The value of the in-flight command map is the `resolve` function used to resolve the
+   * promise returned by the `scheduleTask()` method.
+   */
   private next_job_id: number;
+  /**
+   * An array containing objects representing the worker threads in the pool.
+   * Each object contains the worker thread itself, a map of its in-flight commands, and the worker ID.
+   * The in-flight commands map is keyed by the `job_id` of the command.
+   * The value of the in-flight command map is the `resolve` function used to resolve the
+   * promise returned by the `scheduleTask()` method. The worker ID is an integer in the range [0, size - 1].
+   */
   private workers: {
     worker: Worker;
     in_flight_commands: Map<number, any>;
     worker_id: number;
   }[];
+  /**
+   * Creates a new RpcWorkerPool object.
+   * @param path - The file path of the worker thread code.
+   * @param size - The number of worker threads to create. Defaults to the number of CPU cores.
+   * @param strategy - The strategy used to allocate tasks to worker threads. Defaults to 'leastbusy'.
+   * @param verbosity - A boolean indicating whether logging is enabled. Defaults to false.
+   * When logging is enabled, the pool will log messages to the console.
+   */
   constructor(
     path: string,
     size: number = 0,
-    strategy: string = 'leastbusy',
-    versosity = VERBOSE
+    strategy: Strategies = strategies.leastbusy,
+    verbosity = VERBOSE
   ) {
     this.size = size < 0 ? Math.max(CORES + size, 1) : size || CORES;
-    this.strategy = STRATEGIES.has(strategy) ? strategy : 'leastbusy';
-    this.versosity = versosity;
+    this.strategy = supportedStrategies.has(strategy)
+      ? strategy
+      : strategies.leastbusy;
+    this.verbosity = verbosity;
 
     this.rr_index = -1;
     this.next_job_id = 0;
     this.workers = [];
     for (let worker_id = 0; worker_id < this.size; worker_id++) {
-      const worker = new Worker(path);
+      // HACK: This is a hack to work around the fact that the Worker constructor does not support
+      const worker = new Worker(
+        `
+  require('ts-node/register');
+  require(require('worker_threads').workerData.runThisFileInTheWorker);
+`,
+        {
+          eval: true,
+          workerData: {
+            runThisFileInTheWorker: path, // '/path/to/worker-script.ts'
+          },
+        }
+      );
+
+      // const worker = new Worker(path);
       this.workers.push({ worker, in_flight_commands: new Map(), worker_id });
       worker.on('message', msg => {
         this.onMessageHandler(msg, worker_id);
@@ -39,20 +120,13 @@ export class RpcWorkerPool {
     }
   }
   // ++ --------------------------------------------------------------
-  onMessageHandler(msg: any, worker_id: number) {
-    const worker = this.workers[worker_id];
-
-    const { result, error, job_id } = msg;
-
-    // resolve: (value: any) => void, reject: (reason?: any) =>
-    const { resolve, reject } = worker.in_flight_commands.get(job_id);
-    worker.in_flight_commands.delete(job_id);
-
-    if (error) reject(error);
-    else resolve(result);
-  }
-  // ++ --------------------------------------------------------------
-
+  /**
+   * Sends a command to a worker thread for execution.
+   * @param command_name - The name of the command to execute.
+   * @param message_id - A message ID to associate with the command.
+   * @param args - Optional arguments for the command.
+   * @returns A promise that resolves to the result of the command execution.
+   */
   async exec(command_name: string, message_id: number, ...args: string[]) {
     const job_id = this.next_job_id++;
 
@@ -67,6 +141,11 @@ export class RpcWorkerPool {
     return promise;
   }
   // ++ --------------------------------------------------------------
+  /**
+   * Returns the worker thread to which the next command should be sent.
+   * @param message_id - A message ID to associate with the command.
+   * @returns An object representing the worker thread to use.
+   */
   getWorker(message_id = -1) {
     let worker_id: number = 0;
     switch (this.strategy) {
@@ -89,36 +168,32 @@ export class RpcWorkerPool {
           }
         }
     }
-
-    this.versosity &&
+    this.verbosity &&
       console.log(`Worker: ${worker_id + 1} Message id: ${message_id || 0}`);
 
     return this.workers[worker_id];
   }
-}
+  // ++ --------------------------------------------------------------
+  /**
+   * Handler for messages received from worker threads.
+   * @param msg - The message received from the worker thread.
+   * @param worker_id - The ID of the worker thread that sent the message.
+   */
+  onMessageHandler(msg: any, worker_id: number) {
+    const worker = this.workers[worker_id];
 
+    const { result, error, job_id } = msg;
+
+    // resolve: (value: any) => void, reject: (reason?: any) =>
+    const { resolve, reject } = worker.in_flight_commands.get(job_id);
+    worker.in_flight_commands.delete(job_id);
+
+    if (error) reject(error);
+    else resolve(result);
+  }
+}
 export default RpcWorkerPool;
 
-/**
- * The size of the worker pool
- * @member @type {number}
- */
-/**
- * The strategie to determine the worker to be to execude the next
- * command.
- * @member @type {Strategies}
- */
-/**
- * Determines the verbosity of certain informations to log.
- * @member @type {boolean}
- */
-/**
- * @param {string} method_name - The name of the method listed in
- * the available commands.
- * @param {number} message_id - The sequential number generated by
- * the server, identifies which message will be linked with the
- * curent job being executed. (For feedback purpose only).
- */
 /* **************************************************************** */
 /*                                                                  */
 /*  MIT LICENSE                                                     */

@@ -1,52 +1,80 @@
 #!/usr/bin/env node
-'use strict';
+export {};
 import chalk from 'chalk';
 import { createServer as createHTTP_Server } from 'node:http';
 import { createServer as createTCP_Server } from 'node:net';
-
+import { isStrategy, strategies } from './commands';
 import { RpcWorkerPool } from './RpcWorkerPool';
+('use strict');
 
+/**
+ * A boolean indicating whether logging is enabled.
+ */
 const VERBOSE1 = true;
-// const VERBOSE2 = true;
 
+// Parse command line arguments
 const [, , web_host, actor_host, threads_, strategy_] = process.argv;
 const [web_hostname, web_port] = (web_host || '').split(':');
 const [actor_hostname, actor_port] = (actor_host || '').split(':');
-
-const workerScriptFileUri = `${__dirname}/worker.js`;
+const workerScriptFileUri = `${__dirname}/worker.ts`;
 const threads = Number(threads_ || 0);
-const strategy = strategy_ || 'roundrobin';
+const strategy = isStrategy(strategy_) ? strategy_ : strategies.roundrobin;
 
-let message_id = 0;
-let actors = new Set(); // collection of actor handlers
-let messages = new Map(); // message ID -> HTTP response
-
+/**
+ * The ID of the next message.
+ */
+const idCount = { messageId: 0, actorId: 0 };
+/**
+ * A collection of actor handlers.
+ */
+const actors = new Set();
+/**
+ * A map of message IDs to HTTP responses.
+ */
+const messages = new Map();
 // ++ randomActor() --------------------------------------------------
+/**
+ * Returns a randomly selected actor handler.
+ * @returns An actor handler from the actors collection.
+ */
 function randomActor() {
   const pool = [...actors];
   return pool[Math.floor(Math.random() * pool.length)];
 }
 
 // ++ HTTP_Server ----------------------------------------------------
-void createHTTP_Server((req, res): any => {
-  message_id++;
-  // let current_message_id;
-
+/**
+ * The HTTP Server Handler for incoming HTTP requests. This handler will
+ * choose a random actor and send the request to it. The actor will
+ * respond to the client via the TCP Server. The HTTP Server Handler
+ * will wait for the response from the TCP Server and send it to the
+ * client.
+ */
+const HTTP_Server = createHTTP_Server((req, res): any => {
+  idCount.messageId++;
+  // If there are no actors, respond with an error message
   if (actors.size === 0) return res.end('ERROR: EMPTY ACTOR POOL');
 
+  // Select a random actor to handle the request
   const actor: any = randomActor();
 
-  void messages.set(message_id, res);
+  // Store the response object with the message ID for later use
+  void messages.set(idCount.messageId, res);
 
+  // Extract the command name and arguments from the URL
   const splitedUrl = (req?.url || '').split('/');
   const command_name = splitedUrl.slice(1, 2).pop();
 
+  // Send the command and arguments to the selected actor
   void actor({
-    id: message_id,
+    id: idCount.messageId,
     command_name,
     args: [...splitedUrl.slice(2)],
   });
-}).listen(Number(web_port), web_hostname, () => {
+});
+
+// Start the HTTP server
+void HTTP_Server.listen(Number(web_port), web_hostname, () => {
   console.info(
     '\n\n> ' +
       chalk.green('web:  ') +
@@ -57,31 +85,52 @@ void createHTTP_Server((req, res): any => {
 });
 
 // ++ TCP_Server -----------------------------------------------------
-void createTCP_Server(tcp_client => {
+/**
+ * The TCP Server Handler for incoming TCP requests. This handler will
+ * wait for the actor response and send it to the HTTP Server Handler.
+ * The HTTP Server Handler will wait for the response from the TCP
+ * Server and send it to the client.
+ */
+const TCP_Server = createTCP_Server(tcp_client => {
+  // The handler function is used to send responses back to this TCP client
   const handler = (data: any) =>
     tcp_client.write(JSON.stringify(data) + '\0\n\0'); // <1>
-  actors.add(handler);
-  console.info('actor pool connected', actors.size);
 
+  // Add the handler function to the actor pool
+  void actors.add(handler);
+  // Log the current size of the actor pool
+  void console.info('actor pool connected', actors.size);
+
+  // Remove the handler function from the actor pool when the client disconnects
   void tcp_client.on('end', () => {
-    actors.delete(handler); // <2>
-    console.info('actor pool disconnected', actors.size);
+    void actors.delete(handler); // <2>
+    // Log the current size of the actor pool
+    void console.info('actor pool disconnected', actors.size);
   });
 
+  // Handle incoming data from the TCP client
   void tcp_client.on('data', raw_data => {
+    // Split the incoming data by the defined delimiter and remove the last (empty) null, new line, null.
     void String(raw_data)
       .split('\0\n\0')
       .slice(0, -1) // Remove the last (empty) null, new line, null.
       .forEach(chunk => {
+        // Parse the incoming data as a JSON object
         const data = JSON.parse(chunk);
+        // Retrieve the HTTP response object associated with the message ID
         const res = messages.get(data.id);
 
-        res.end(JSON.stringify(data) + '\0\n\0');
-        messages.delete(data.id);
+        // Send the response to the HTTP client
+        void res.end(JSON.stringify(data) + '\0\n\0');
+        // Remove the HTTP response object from the message map
+        void messages.delete(data.id);
       });
   });
-}).listen(Number(actor_port), actor_hostname, () => {
-  console.info(
+});
+
+// Start listening for incoming TCP connections
+void TCP_Server.listen(Number(actor_port), actor_hostname, () => {
+  void console.info(
     '> ' +
       chalk.green('actor: ') +
       chalk.yellow(`tcp:\/\/${actor_hostname}`) +
@@ -92,34 +141,39 @@ void createTCP_Server(tcp_client => {
 });
 
 // ++ new worker from RpcWorkerPool-----------------------------------
+// Create a new instance of RpcWorkerPool to handle communication with worker threads.
 const workerPool = new RpcWorkerPool(
-  workerScriptFileUri,
-  threads,
-  strategy,
-  VERBOSE1
+  workerScriptFileUri, // The URI of the worker script file.
+  threads, // The number of worker threads to spawn.
+  strategy, // The strategy for handling incoming requests.
+  VERBOSE1 // Whether or not to enable verbose output.
 );
 
-let actor_id = 0;
 // ++ actors.add -----------------------------------------------------
+// Add an actor handler to the actors set.
 void actors.add(async (data: any) => {
   try {
     // Executor of the worker from pool.
     const timeBefore = performance.now();
     const value = await workerPool.exec(
-      data.command_name,
-      data.id,
-      ...data.args
+      data.command_name, // The name of the command to execute.
+      data.id, // The ID of the incoming request.
+      ...data.args // Any additional arguments for the command.
     );
     const timeAfter = performance.now();
     const delay = timeAfter - timeBefore;
     const time = Math.round(delay * 100) / 100;
 
-    actor_id++;
+    // Increment actor ID.
+    idCount.actorId++;
 
+    // Build reply object.
     const replyObject = {
       id: data.id,
-      pid: `actor(${actor_id}) at process: ${process.pid}`,
+      pid: `actor(${idCount.actorId}) at process: ${process.pid}`,
     };
+
+    // Build reply string.
     const reply =
       JSON.stringify({
         jsonrpc: '2.0',
@@ -128,7 +182,8 @@ void actors.add(async (data: any) => {
         performance: delay,
       }) + '\0\n\0';
 
-    console.log(
+    // Log performance information.
+    void console.log(
       'actors.add!',
       {
         jsonrpc: '2.0',
@@ -137,10 +192,11 @@ void actors.add(async (data: any) => {
       'performance: ' + chalk.yellow(time) + ' ms'
     );
 
+    // Send response back to HTTP server.
     void messages.get(data.id).end(reply);
     void messages.delete(data.id);
   } catch (error) {
-    console.error(error);
+    void console.error(error);
   }
 });
 
@@ -181,3 +237,69 @@ void actors.add(async (data: any) => {
 /*  permissions@oreilly.com.                                        */
 /*                                                                  */
 /* **************************************************************** */
+
+/* **************************************************************** */
+//
+/*
+%% ChatGPT Code Analysis
+
+## Topic:
+Refactoring and optimizing a Node.js server application.
+
+## Context:
+We have been discussing a Node.js server application and how to
+optimize and refactor it for better performance, resilience,
+robustness, and security. We have already made some changes to the
+code, including using type annotations, removing let statements, and
+adding object counters for message and actor IDs.
+
+## Action items:
+Use type annotations for function parameters, return values, and
+variables to make the code more self-documenting.
+Refactor the code to remove let statements and use object counters
+instead.
+Implement a load balancer in the RpcWorkerPool to distribute incoming
+requests among worker threads.
+Use performance.now() to measure the execution time of worker
+functions.
+Add error handling and logging to improve resilience and robustness.
+Update comments and annotations to improve readability and
+maintanability of the code.
+
+## Key points:
+Use type annotations to make the code more self-documenting and
+easier to understand.
+Refactor the code to use object counters instead of let statements.
+Implement a load balancer in the RpcWorkerPool to distribute incoming
+requests among worker threads for better performance.
+Use performance.now() to measure the execution time of worker
+functions and improve performance.
+Add error handling and logging to improve resilience and robustness.
+Update comments and annotations to improve readability and
+maintainability of the code.
+
+## Contextual information:
+The application is a Node.js server that receives HTTP requests,
+sends them to worker threads for processing, and returns the response
+to the client.
+The code has already been refactored to remove let statements and use
+object counters instead.
+The RpcWorkerPool is already using a load balancer to distribute
+incoming requests among worker threads.
+The application is being optimized for better performance,
+resilience, robustness, and security.
+
+## Next steps:
+Continue to optimize the code for better performance, resilience,
+robustness, and security.
+Refactor the code to handle errors and log information for easier
+debugging and maintenance.
+Implement testing to ensure the code is working as expected.
+Explore additional security measures, such as input validation and
+authentication.
+Keep comments and annotations up-to-date to improve maintainability.
+
+Once you have the summary, please feel free to copy and paste this
+summary into a new instance of ChatGPT so we can continue our
+conversation where we left off.
+******************************************************************* */

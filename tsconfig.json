@@ -31,7 +31,14 @@
       "node",
       "jest",
       "heft-jest"
-    ]
+    ],
+    "baseUrl": "./",
+    "paths": {
+      "*": [
+        "*",
+        "src/*"
+      ]
+    }
   },
   "include": [
     "./src"
