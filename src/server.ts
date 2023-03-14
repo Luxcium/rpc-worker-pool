@@ -1,13 +1,12 @@
 #!/usr/bin/env node
-export {};
 import chalk from 'chalk';
 import { existsSync } from 'node:fs';
 import { createServer as createHTTP_Server } from 'node:http';
 import { createServer as createTCP_Server } from 'node:net';
 import { isStrategy, strategies } from './commands';
 import { RpcWorkerPool } from './RpcWorkerPool';
-('use strict');
 
+// ++ Initial Setup --------------------------------------------------
 /**
  * A boolean indicating whether logging is enabled.
  */
@@ -132,7 +131,7 @@ const TCP_Server = createTCP_Server(tcp_client => {
   });
 });
 
-// Start listening for incoming TCP connections
+// ++ Start listening for incoming TCP connections -------------------
 void TCP_Server.listen(Number(actor_port), actor_hostname, () => {
   void console.info(
     '> ' +
@@ -144,7 +143,7 @@ void TCP_Server.listen(Number(actor_port), actor_hostname, () => {
   );
 });
 
-// ++ new worker from RpcWorkerPool-----------------------------------
+// ++ new worker from RpcWorkerPool ----------------------------------
 // Create a new instance of RpcWorkerPool to handle communication with worker threads.
 const workerPool = new RpcWorkerPool(
   workerScriptFileUri, // The URI of the worker script file.
