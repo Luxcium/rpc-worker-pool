@@ -6,23 +6,15 @@ import { connect } from 'net';
 import { RpcWorkerPool } from './RpcWorkerPool';
 
 const workerScriptFileUri = `${__dirname}/worker.js`;
-const [, , host, threads_, strategy_] = process.argv;
+
+const [, , host] = process.argv;
 const [hostname, port] = host.split(':');
-const threads = Number(threads_ || 0);
-const strategy = strategy_ || 'roundrobin';
 
 const Strategies = {
   roundrobin: 'roundrobin',
   random: 'random',
   leastbusy: 'leastbusy',
 };
-
-const workerPool = new RpcWorkerPool(
-  workerScriptFileUri,
-  threads,
-  Strategies[strategy]
-);
-
 // ++ ----------------------------------------------------------------
 console.log('Will try to connect', host);
 const upstreamSocket = connect(Number(port), hostname, () => {
@@ -39,16 +31,22 @@ void upstreamSocket.on('data', raw_data => {
   // console.log('raw_data:', String(raw_data));
 
   const data_string = String(raw_data).split('\0\n\0');
-  // last_data_string = data_string.slice(-1)[0];
+  last_data_string = data_string.slice(-1)[0];
 
-  // data_string.slice(0, -1).forEach(async chunk => {
-  if (last_data_string.length > 0) {
-    data_string[0] = last_data_string + data_string[0];
-  }
-  last_data_string = data_string.pop();
-
-  data_string.forEach(async chunk => {
+  data_string.slice(0, -1).forEach(async chunk => {
     try {
+      if (last_data_string.length > 0) {
+        console.error(
+          '\n\n\nlast_data_string.length > 0',
+          last_data_string,
+          '\n\n\n'
+        );
+        throw new Error(
+          "String(raw_data).split('\0\n\0') ERROR: last_data_string.length > 0"
+        );
+      }
+
+      // BUG:~ Must add last non empty chunk first prior to the next chunk
       const data = JSON.parse(chunk);
       const timeBefore = performance.now();
       const result = await getWorker().exec(
@@ -99,6 +97,10 @@ void upstreamSocket.on('data', raw_data => {
 void upstreamSocket.on('end', () => {
   console.log('  >', 'disconnect from server');
 });
+
+function getWorker() {
+  return new RpcWorkerPool(workerScriptFileUri, 1, Strategies.random);
+}
 
 /* **************************************************************** */
 /*                                                                  */
