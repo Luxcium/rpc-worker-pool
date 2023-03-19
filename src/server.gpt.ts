@@ -4,9 +4,9 @@ import { createServer as createHTTP_Server } from 'node:http';
 import { createServer as createTCP_Server } from 'node:net';
 import { isStrategy, strategies } from './commands';
 import { RpcWorkerPool } from './RpcWorkerPool';
-const [, , web_host, actor_host, threads_, strategy_] = process.argv;
-const [web_hostname, web_port] = (web_host || '').split(':');
-const [actor_hostname, actor_port] = (actor_host || '').split(':');
+const [, , webConnection, actorConnection, threads_, strategy_] = process.argv;
+const [webEndpoint, webPort] = (webConnection || '').split(':');
+const [actorEndpoint, actorPort] = (actorConnection || '').split(':');
 const workerScriptFileUri = `${__dirname}/worker.${
   existsSync(`${__dirname}/worker.ts`) ? 'ts' : 'js'
 }`;
@@ -34,13 +34,13 @@ const HTTP_Server = createHTTP_Server((req, res) => {
   return res;
 });
 
-HTTP_Server.listen(Number(web_port), web_hostname, () => {
+HTTP_Server.listen(Number(webPort), webEndpoint, () => {
   console.info(
     '> ' +
       chalk.green('web:  ') +
-      chalk.yellow(`http:\/\/${web_hostname}`) +
+      chalk.yellow(`http:\/\/${webEndpoint}`) +
       ':' +
-      chalk.magenta(`${web_port}`)
+      chalk.magenta(`${webPort}`)
   );
 });
 const TCP_Server = createTCP_Server(tcp_client => {
@@ -64,13 +64,13 @@ const TCP_Server = createTCP_Server(tcp_client => {
       });
   });
 });
-TCP_Server.listen(Number(actor_port), actor_hostname, () => {
+TCP_Server.listen(Number(actorPort), actorEndpoint, () => {
   console.info(
     '> ' +
       chalk.green('actor: ') +
-      chalk.yellow(`tcp:\/\/${actor_hostname}`) +
+      chalk.yellow(`tcp:\/\/${actorEndpoint}`) +
       ':' +
-      chalk.magenta(`${actor_port}`) +
+      chalk.magenta(`${actorPort}`) +
       '\n\n\n\n'
   );
 });

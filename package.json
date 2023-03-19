@@ -6,6 +6,7 @@
   "types": "dist/typings/index.d.ts",
   "scripts": {
     "build": "(npm test && bash scripts/build.sh) || exit 15",
+    "install": "pwd; yarn build || exit 13; pwd",
     "deploy:local": "cp package.json ./docker/package.json; npm run build && npm run docker:build",
     "docker:build": "docker build --progress plain --label 'image:rpc-worker-pool' --tag rpc-worker-pool:latest ./docker",
     "docker:live:server": "zsh scripts/docker-run.server.sh || exit 55",

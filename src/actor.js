@@ -2,7 +2,8 @@
 'use strict';
 
 import chalk from 'chalk';
-import { connect } from 'net';
+import { connect } from 'node:net';
+import { join } from 'node:path';
 import { RpcWorkerPool } from './RpcWorkerPool';
 
 // ## DEFAULTS VALUE ―――――――――――――――――――――――――――――――――――――――――――――――――
@@ -10,7 +11,7 @@ const ENDPOINT = '0.0.0.0';
 const PORT = '7010';
 const THREADS = 0;
 const STRATEGY = 'roundrobin';
-const SCRIPT_FILE_URI = `${__dirname}/worker.js`;
+const SCRIPT_FILE_URI = join(`${__dirname}/worker.js`);
 
 // ## WILL PREFRE ENV IN DOCKER CONTAINER ――――――――――――――――――――――――――――
 const endpointEnv = process.env.ACTOR_ENDPOINT;

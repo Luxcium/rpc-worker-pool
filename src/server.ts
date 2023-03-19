@@ -13,9 +13,9 @@ import { RpcWorkerPool } from './RpcWorkerPool';
 const VERBOSE1 = true;
 
 // Parse command line arguments
-const [, , web_host, actor_host, threads_, strategy_] = process.argv;
-const [web_hostname, web_port] = (web_host || '').split(':');
-const [actor_hostname, actor_port] = (actor_host || '').split(':');
+const [, , webConnection, actorConnection, threads_, strategy_] = process.argv;
+const [webEndpoint, webPort] = (webConnection || '').split(':');
+const [actorEndpoint, actorPort] = (actorConnection || '').split(':');
 // const workerScriptFileUri = `${__dirname}/worker.ts`;
 const workerScriptFileUri = `${__dirname}/worker.${
   existsSync(`${__dirname}/worker.ts`) ? 'ts' : 'js'
@@ -77,13 +77,13 @@ const HTTP_Server = createHTTP_Server((req, res): any => {
 });
 
 // Start the HTTP server
-void HTTP_Server.listen(Number(web_port), web_hostname, () => {
+void HTTP_Server.listen(Number(webPort), webEndpoint, () => {
   console.info(
     '\n\n> ' +
       chalk.green('web:  ') +
-      chalk.yellow(`http:\/\/${web_hostname}`) +
+      chalk.yellow(`http:\/\/${webEndpoint}`) +
       ':' +
-      chalk.magenta(`${web_port}`)
+      chalk.magenta(`${webPort}`)
   );
 });
 
@@ -132,13 +132,13 @@ const TCP_Server = createTCP_Server(tcp_client => {
 });
 
 // ++ Start listening for incoming TCP connections -------------------
-void TCP_Server.listen(Number(actor_port), actor_hostname, () => {
+void TCP_Server.listen(Number(actorPort), actorEndpoint, () => {
   void console.info(
     '> ' +
       chalk.green('actor: ') +
-      chalk.yellow(`tcp:\/\/${actor_hostname}`) +
+      chalk.yellow(`tcp:\/\/${actorEndpoint}`) +
       ':' +
-      chalk.magenta(`${actor_port}`) +
+      chalk.magenta(`${actorPort}`) +
       '\n\n\n\n'
   );
 });
