@@ -1,38 +1,78 @@
 #!/usr/bin/env node
 'use strict';
+
 import chalk from 'chalk';
 import { connect } from 'net';
-// import { Strategies } from './consts';
 import { RpcWorkerPool } from './RpcWorkerPool';
 
-const workerScriptFileUri = `${__dirname}/worker.js`;
-const [, , host, threads_, strategy_] = process.argv;
-const [hostname, port] = host.split(':');
-const threads = Number(threads_ || 0);
-const strategy = strategy_ || 'roundrobin';
+// ## DEFAULTS VALUE ―――――――――――――――――――――――――――――――――――――――――――――――――
+const ENDPOINT = '0.0.0.0';
+const PORT = '7010';
+const THREADS = 0;
+const STRATEGY = 'roundrobin';
+const SCRIPT_FILE_URI = `${__dirname}/worker.js`;
 
-const Strategies = {
-  roundrobin: 'roundrobin',
-  random: 'random',
-  leastbusy: 'leastbusy',
-};
+// ## WILL PREFRE ENV IN DOCKER CONTAINER ――――――――――――――――――――――――――――
+const endpointEnv = process.env.ACTOR_ENDPOINT;
+const portEnv = process.env.ACTOR_PORT;
+const threadsEnv = process.env.ACTOR_THREADS;
+const strategyEnv = process.env.ACTOR_STRATEGY;
+const scriptFileEnv = process.env.SCRIPT_FILE_URI;
 
-const workerPool = new RpcWorkerPool(
-  workerScriptFileUri,
-  threads,
-  Strategies[strategy]
-);
+// ## WILL PREFRE ARGV WHEN COMMAND LINE INVOQUATION ―――――――――――――――――
+const [, , connecParam, threadsParam, strategyParam, scriptFileParam] =
+  process.argv;
+const [endpointParam, portParam] = connecParam.split(':');
 
-// ++ ----------------------------------------------------------------
-console.log('Will try to connect', host);
-const upstreamSocket = connect(Number(port), hostname, () => {
-  console.log('  > Actor pool connected to server!');
+// ## WILL SET PRIORRITY ―――――――――――――――――――――――――――――――――――――――――――――
+const inDocker = isInDocker => (e, a) => isInDocker ? e || a : a || e;
+const priority = inDocker(process.env.RUNNING_IN_DOCKER === 'true');
+
+// ## WILL DEFINE PRIORRITY ――――――――――――――――――――――――――――――――――――――――――
+const define = def => (env, arg) => priority(env, arg) || def;
+const defEndPoint = define(ENDPOINT);
+const defPort = define(PORT);
+const defThreads = define(THREADS);
+const defStrategy = define(STRATEGY);
+const defScriptFileUri = define(SCRIPT_FILE_URI);
+
+// ## WILL DEFINE VALUES ―――――――――――――――――――――――――――――――――――――――――――――
+const actorEndpoint = defEndPoint(endpointEnv, endpointParam);
+const actorPort = defPort(portEnv, portParam);
+const threads = Number(defThreads(threadsEnv, threadsParam));
+const strategy = String(defStrategy(strategyEnv, strategyParam));
+const scriptFileUri = defScriptFileUri(scriptFileEnv, scriptFileParam);
+
+// ## WILL SET DEFINED STRATEGY ――――――――――――――――――――――――――――――――――――――
+let myStrategies = '';
+try {
+  myStrategies = {
+    roundrobin: 'roundrobin',
+    random: 'random',
+    leastbusy: 'leastbusy',
+  }[strategy];
+} catch {
+  myStrategies = STRATEGY;
+}
+
+// ## WILL CREATE WORKER POOL INSTANCE ―――――――――――――――――――――――――――――――
+const workerPool = new RpcWorkerPool(scriptFileUri, threads, myStrategies);
+
+// ## WILL TRY TO CONNECT ――――――――――――――――――――――――――――――――――――――――――――
+
+console.log('Will try to connect', connection);
+const upstreamSocket = connect(Number(actorPort), actorEndpoint, () => {
+  console.log(
+    '  > Actor pool connected to server at ' + actorEndpoint + ':' + actorPort
+  );
 });
 
+// ## LISTEN FOR ERRORS ――――――――――――――――――――――――――――――――――――――――――――――
 void upstreamSocket.on('error', error => {
   console.error(error);
 });
 
+// ## LISTEN FOR DATA ――――――――――――――――――――――――――――――――――――――――――――――――
 let last_data_string = '';
 let actor_id = 0;
 void upstreamSocket.on('data', raw_data => {
@@ -96,9 +136,13 @@ void upstreamSocket.on('data', raw_data => {
   });
 });
 
+// ## LISTEN FOR CONNECTION END ――――――――――――――――――――――――――――――――――――――
 void upstreamSocket.on('end', () => {
-  console.log('  >', 'disconnect from server');
+  console.log(
+    '  > Disconnected from actor pool at ' + actorEndpoint + ':' + actorPort
+  );
 });
+// ## ――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――
 
 /* **************************************************************** */
 /*                                                                  */
