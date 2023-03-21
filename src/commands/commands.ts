@@ -6,14 +6,13 @@ import { timeoutZalgo } from './timeout-zalgo';
 
 export const commands: { [k: string]: any } = {
   ['hello-world'](job_id: any, ...args: any[]) {
-    console.log(
-      job_id++,
+    // console.log
+    job_id++,
       chalk.ansi256(209)('Hello wold will echo back:'),
-      chalk.ansi256(92)(deserializeURI(...(args as [any]))) + '\n\n'
-    );
+      chalk.ansi256(92)(deserializeURI(...(args as [any]))) + '\n\n';
 
     return {
-      ['hello-world']: chalk.yellow('Hello wold just echo back!'),
+      ['hello-world']: 'Hello wold just echo back!',
       args: deserializeURI(...(args as [any])),
     };
   },

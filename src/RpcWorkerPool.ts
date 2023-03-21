@@ -59,6 +59,10 @@ export class RpcWorkerPool {
     in_flight_commands: Map<number, any>;
     worker_id: number;
   }[];
+  // The URI of the worker script file.
+  // The number of worker threads to spawn.
+  // The strategy for handling incoming requests.
+  // Whether or not to enable verbose output.
   /**
    * Creates a new RpcWorkerPool object.
    * @param path - The file path of the worker thread code.

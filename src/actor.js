@@ -2,17 +2,21 @@
 'use strict';
 
 import chalk from 'chalk';
+import { existsSync } from 'node:fs';
 import { connect } from 'node:net';
 import { join } from 'node:path';
 import { RpcWorkerPool } from './RpcWorkerPool';
 
 // ## DEFAULTS VALUE ―――――――――――――――――――――――――――――――――――――――――――――――――
+const VERBOSE = true;
+
 const ENDPOINT = '0.0.0.0';
 const PORT = '7010';
 const THREADS = 0;
 const STRATEGY = 'roundrobin';
-const SCRIPT_FILE_URI = join(`${__dirname}/worker.js`);
-
+const SCRIPT_FILE_URI = join(
+  `${__dirname}/worker.${existsSync(`${__dirname}/worker.ts`) ? 'ts' : 'js'}`
+);
 // ## WILL PREFRE ENV IN DOCKER CONTAINER ――――――――――――――――――――――――――――
 const endpointEnv = process.env.ACTOR_ENDPOINT;
 const portEnv = process.env.ACTOR_PORT;
@@ -23,7 +27,7 @@ const scriptFileEnv = process.env.SCRIPT_FILE_URI;
 // ## WILL PREFRE ARGV WHEN COMMAND LINE INVOQUATION ―――――――――――――――――
 const [, , connecParam, threadsParam, strategyParam, scriptFileParam] =
   process.argv;
-const [endpointParam, portParam] = connecParam.split(':');
+const [endpointParam, portParam] = (connecParam || '').split(':');
 
 // ## WILL SET PRIORRITY ―――――――――――――――――――――――――――――――――――――――――――――
 const inDocker = isInDocker => (e, a) => isInDocker ? e || a : a || e;
@@ -57,11 +61,15 @@ try {
 }
 
 // ## WILL CREATE WORKER POOL INSTANCE ―――――――――――――――――――――――――――――――
-const workerPool = new RpcWorkerPool(scriptFileUri, threads, myStrategies);
+const workerPool = new RpcWorkerPool(
+  scriptFileUri,
+  threads,
+  myStrategies,
+  VERBOSE
+);
 
 // ## WILL TRY TO CONNECT ――――――――――――――――――――――――――――――――――――――――――――
-
-console.log('Will try to connect', connection);
+console.log('Will try to connect', actorEndpoint + ':' + actorPort);
 const upstreamSocket = connect(Number(actorPort), actorEndpoint, () => {
   console.log(
     '  > Actor pool connected to server at ' + actorEndpoint + ':' + actorPort
@@ -92,7 +100,7 @@ void upstreamSocket.on('data', raw_data => {
     try {
       const data = JSON.parse(chunk);
       const timeBefore = performance.now();
-      const result = await getWorker().exec(
+      const result = await workerPool.exec(
         data.command_name,
         `${data.id}`,
         ...data.args
@@ -101,11 +109,6 @@ void upstreamSocket.on('data', raw_data => {
       const delay = timeAfter - timeBefore;
       const time = Math.round(delay * 100) / 100;
 
-      // console.log('remote.actors.add', {
-      //   id: data.id,
-      //   performance: timeAfter - timeBefore,
-      //   pid: 'actor:' + process.pid,
-      // });
       console.log(
         'remote.actors.add',
         {
@@ -119,8 +122,8 @@ void upstreamSocket.on('data', raw_data => {
         jsonrpc: '2.0',
         id: data.id,
         result,
+        pid: `actor(${actor_id}) at process: ${process.pid}`,
         performance: delay,
-        pid: 'actor:' + process.pid,
       };
 
       void upstreamSocket.write(JSON.stringify(jsonRpcMessage) + '\0\n\0');
