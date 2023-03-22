@@ -4,8 +4,9 @@ import { existsSync } from 'node:fs';
 import { createServer as createHTTP_Server, ServerResponse } from 'node:http';
 import { createServer as createTCP_Server } from 'node:net';
 import { join } from 'node:path';
-import { isStrategy, strategies } from './commands';
-import { RpcWorkerPool } from './RpcWorkerPool';
+import { isStrategy, strategies } from '../commands';
+import RpcWorkerPool from '../RpcWorkerPool.gpt';
+import { error400, error500, error503 } from './errorHttp';
 
 const VERBOSE = false;
 
@@ -70,166 +71,28 @@ const scriptFileUri = defScriptFileUri(scriptFileEnv, scriptFileParam);
 // ## WILL CREATE WORKER POOL INSTANCE ―――――――――――――――――――――――――――――――
 const workerPool = new RpcWorkerPool(scriptFileUri, threads, strategy, VERBOSE);
 
+// ++ randomActor() --------------------------------------------------
+/**
+ * Returns a randomly selected actor handler.
+ * @returns An actor handler from the actors collection.
+ */
+function randomActor() {
+  const pool = [...actorSet];
+  return pool[Math.floor(Math.random() * pool.length)];
+}
 /**
  * The ID of the next message.
  */
 const idCounter = { messageId: 0, actorId: 0 };
 /**
- * A collection of actor handlers.
- */
-const actorSet = new Set();
-/**
  * A map of message IDs to HTTP responses.
  */
 const messageMapping = new Map<number, ServerResponse>();
 
-// ++ HTTP_Server ----------------------------------------------------
-
 /**
- * The HTTP Server Handler for incoming HTTP requests. This handler will
- * choose a random actor and send the request to it. The actor will
- * respond to the client via the TCP Server. The HTTP Server Handler
- * will wait for the response from the TCP Server and send it to the
- * client.
+ * A collection of actor handlers.
  */
-const HTTP_Server = createHTTP_Server((req, res): any => {
-  try {
-    idCounter.messageId++;
-
-    // End if there are no actors, respond with an error message
-    if (actorSet.size === 0) {
-      const reason = 'EMPTY ACTOR POOL';
-      const description = 'No actors available to handle requests.';
-      return error503(res, reason, description);
-    }
-
-    // Select a random actor to handle the request
-    const actor: any = randomActor();
-
-    // Store the response object with the message ID for later use
-    void messageMapping.set(idCounter.messageId, res);
-
-    // Extract the command name, query string, and fragment identifier from the URL
-    const fullUrl = new URL(req?.url || '', `http:${'//' + req.headers.host}`);
-    // Split the path into segments and filter out empty strings
-    const pathSegments = fullUrl.pathname.split('/').filter(Boolean);
-
-    const destination = pathSegments.shift();
-    const fullArgs = pathSegments;
-    // Get the query string
-    const queryString = fullUrl.search;
-    // Get the fragment identifier
-    const fragmentIdentifier = fullUrl.hash;
-    if (destination === 'worker') {
-      // Remove and store the first segment as the command name
-      const command_name = pathSegments.shift();
-      // The remaining segments are the arguments
-      const args = pathSegments;
-
-      // Send the command and arguments, along with the query string and fragment identifier, to the selected actor
-      actor({
-        id: idCounter.messageId,
-        command_name,
-        args,
-        queryString,
-        fragmentIdentifier,
-      });
-    } else if (destination === 'server') {
-      // Remove and store the first segment as the command name
-      const command_name = pathSegments.shift();
-      // The remaining segments are the arguments
-      const args = pathSegments;
-      // Get the query string
-      const queryString = fullUrl.search;
-      // Get the fragment identifier
-      const fragmentIdentifier = fullUrl.hash;
-      error400(
-        res,
-        `${command_name}`,
-        `fullArgs: ${fullArgs}, args: ${args}, queryString: ${queryString}, fragmentIdentifier: ${fragmentIdentifier}`
-      );
-      // sever would do something
-    } else {
-      error400(
-        res,
-        `UNIMPLEMENTD DESTINATION: ${destination}`,
-        `fullArgs: ${fullArgs}, queryString: ${queryString}, fragmentIdentifier: ${fragmentIdentifier}`
-      );
-    }
-  } catch (error) {
-    console.error(error);
-    return error500(res);
-  }
-});
-
-HTTP_Server.listen(Number(httpPort), httpEndpoint, () => {
-  console.info(
-    '\n\n> ' +
-      chalk.green('web:  ') +
-      chalk.yellow(`http:\/\/${httpEndpoint}`) +
-      ':' +
-      chalk.magenta(`${httpPort}`)
-  );
-});
-
-// ++ TCP_Server -----------------------------------------------------
-/**
- * The TCP Server Handler for incoming TCP requests. This handler will
- * wait for the actor response and send it to the HTTP Server Handler.
- * The HTTP Server Handler will wait for the response from the TCP
- * Server and send it to the client.
- */
-void createTCP_Server;
-void actorEndpoint;
-void actorPort;
-// const TCP_Server = createTCP_Server(tcp_client => {
-//   // The handler function is used to send responses back to this TCP client
-//   const handler = (data: any) =>
-//     tcp_client.write(JSON.stringify(data) + '\0\n\0'); // <1>
-
-//   // Add the handler function to the actor pool
-//   void actorSet.add(handler);
-//   // Log the current size of the actor pool
-//   void console.info('actor pool connected', actorSet.size);
-
-//   // Remove the handler function from the actor pool when the client disconnects
-//   void tcp_client.on('end', () => {
-//     void actorSet.delete(handler); // <2>
-//     // Log the current size of the actor pool
-//     void console.info('actor pool disconnected', actorSet.size);
-//   });
-
-//   // Handle incoming data from the TCP client
-//   void tcp_client.on('data', raw_data => {
-//     // Split the incoming data by the defined delimiter and remove the last (empty) null, new line, null.
-//     void String(raw_data)
-//       .split('\0\n\0')
-//       .slice(0, -1) // Remove the last (empty) null, new line, null.
-//       .forEach(chunk => {
-//         // Parse the incoming data as a JSON object
-//         const data = JSON.parse(chunk);
-//         // Retrieve the HTTP response object associated with the message ID
-//         const reply = JSON.stringify(data).replaceAll('\0', '');
-
-//         response(data, reply);
-//       });
-//   });
-// });
-
-// TCP_Server.listen(Number(actorPort), actorEndpoint, () => {
-//   console.info(
-//     '> ' +
-//       chalk.green('actor: ') +
-//       chalk.yellow(`tcp:\/\/${actorEndpoint}`) +
-//       ':' +
-//       chalk.magenta(`${actorPort}`) +
-//       '\n\n\n\n'
-//   );
-// });
-
-// ++ actors.add -----------------------------------------------------
-// Add an actor handler to the actors set.
-
+const actorSet = new Set();
 actorSet.add(async (data: any) => {
   try {
     // Executor of the worker from pool.
@@ -283,17 +146,154 @@ actorSet.add(async (data: any) => {
     console.error(error);
   }
 });
-// ++ randomActor() --------------------------------------------------
-/**
- * Returns a randomly selected actor handler.
- * @returns An actor handler from the actors collection.
- */
-function randomActor() {
-  const pool = [...actorSet];
-  return pool[Math.floor(Math.random() * pool.length)];
-}
 
-function serverResponse(res: ServerResponse) {
+// ++ HTTP_Server ----------------------------------------------------
+
+/**
+ * The HTTP Server Handler for incoming HTTP requests. This handler will
+ * choose a random actor and send the request to it. The actor will
+ * respond to the client via the TCP Server. The HTTP Server Handler
+ * will wait for the response from the TCP Server and send it to the
+ * client.
+ */
+const HTTP_Server = createHTTP_Server((req, res): any => {
+  try {
+    idCounter.messageId++;
+
+    // End if there are no actors, respond with an error message
+    if (actorSet.size === 0) {
+      const reason = 'EMPTY ACTOR POOL';
+      const description = 'No actors available to handle requests.';
+      return error503(res, reason, description);
+    }
+
+    // Select a random actor to handle the request
+    const actor: any = randomActor();
+
+    // Store the response object with the message ID for later use
+    void messageMapping.set(idCounter.messageId, res);
+
+    // Extract the command name, query string, and fragment identifier from the URL
+    const fullUrl = new URL(req?.url || '', `http:${'//' + req.headers.host}`);
+    // Split the path into segments and filter out empty strings
+    const pathSegments = fullUrl.pathname.split('/').filter(Boolean);
+
+    const destination = pathSegments.shift();
+    const fullArgs = pathSegments;
+    // Get the query string
+    const queryString = fullUrl.search;
+    // Get the fragment identifier
+    const fragmentIdentifier = fullUrl.hash;
+    if (destination === 'worker') {
+      // Remove and store the first segment as the command name
+      const command_name = pathSegments.shift();
+      // The remaining segments are the arguments
+      const args = pathSegments;
+
+      // Send the command and arguments, along with the query string and fragment identifier, to the selected actor
+      actor({
+        id: idCounter.messageId,
+        command_name,
+        args,
+        // args: { args, queryString, fragmentIdentifier },
+      });
+    } else if (destination === 'server') {
+      // Remove and store the first segment as the command name
+      const command_name = pathSegments.shift();
+      // The remaining segments are the arguments
+      const args = pathSegments;
+      // Get the query string
+      // const queryString = fullUrl.search;
+      // Get the fragment identifier
+      // const fragmentIdentifier = fullUrl.hash;
+      error400(
+        res,
+        `${command_name}`,
+        `fullArgs: ${fullArgs}, args: ${args}, queryString: ${queryString}, fragmentIdentifier: ${fragmentIdentifier}`
+      );
+      // sever would do something
+    } else {
+      error400(
+        res,
+        `UNIMPLEMENTD DESTINATION: ${destination}`,
+        `fullArgs: ${fullArgs}, queryString: ${queryString}, fragmentIdentifier: ${fragmentIdentifier}`
+      );
+    }
+  } catch (error) {
+    console.error(error);
+    return error500(res);
+  }
+});
+
+HTTP_Server.listen(Number(httpPort), httpEndpoint, () => {
+  console.info(
+    '\n\n> ' +
+      chalk.green('web:  ') +
+      chalk.yellow(`http:\/\/${httpEndpoint}`) +
+      ':' +
+      chalk.magenta(`${httpPort}`)
+  );
+});
+
+// ++ TCP_Server -----------------------------------------------------
+/**
+ * The TCP Server Handler for incoming TCP requests. This handler will
+ * wait for the actor response and send it to the HTTP Server Handler.
+ * The HTTP Server Handler will wait for the response from the TCP
+ * Server and send it to the client.
+ */
+void createTCP_Server;
+void actorEndpoint;
+void actorPort;
+const TCP_Server = createTCP_Server(tcp_client => {
+  // The handler function is used to send responses back to this TCP client
+  const handler = (dataRequest: any) =>
+    tcp_client.write(JSON.stringify(dataRequest) + '\0\n\0'); // <1>
+
+  // Add the handler function to the actor pool
+  void actorSet.add(handler);
+  // Log the current size of the actor pool
+  void console.info('actor pool connected', actorSet.size);
+
+  // Remove the handler function from the actor pool when the client disconnects
+  void tcp_client.on('end', () => {
+    void actorSet.delete(handler); // <2>
+    // Log the current size of the actor pool
+    void console.info('actor pool disconnected', actorSet.size);
+  });
+
+  // Handle incoming data from the TCP client
+  void tcp_client.on('data', raw_data => {
+    // Split the incoming data by the defined delimiter and remove the last (empty) null, new line, null.
+    void String(raw_data)
+      .split('\0\n\0')
+      .slice(0, -1) // Remove the last (empty) null, new line, null.
+      .forEach(chunk => {
+        // Parse the incoming data as a JSON object
+        const data = JSON.parse(chunk);
+        // Retrieve the HTTP response object associated with the message ID
+        const reply = JSON.stringify(data).replaceAll('\0', '');
+
+        response(data, reply);
+      });
+  });
+});
+
+TCP_Server.listen(Number(actorPort), actorEndpoint, () => {
+  console.info(
+    '> ' +
+      chalk.green('actor: ') +
+      chalk.yellow(`tcp:\/\/${actorEndpoint}`) +
+      ':' +
+      chalk.magenta(`${actorPort}`) +
+      '\n\n\n\n'
+  );
+});
+
+// ++ actors.add -----------------------------------------------------
+// Add an actor handler to the actors set.
+
+export function serverResponse(res: ServerResponse) {
   return (
     statusCode: number,
     statusMessage: string,
@@ -307,50 +307,6 @@ function serverResponse(res: ServerResponse) {
   };
 }
 
-function errorHttp(statusCode: number, statusMessage: string) {
-  return (res: ServerResponse, reason: string = '', description: string) => {
-    const writeHead = serverResponse(res);
-    const message = `${statusMessage}${reason ? ': ' + reason : ''}`;
-    const warning = `ERROR[${statusCode}]: ${message}`;
-    console.warn(warning);
-    const reply = writeHead(statusCode, message, 'application/json');
-    reply.end({
-      jsonrpc: '2.0',
-      id: null,
-      error: {
-        code: -32000,
-        message,
-        data: { warning, description },
-      },
-    });
-    console.warn(description);
-    return reply;
-  };
-}
-function error400(
-  res: ServerResponse,
-  reason: string = '',
-  description: string
-) {
-  const reply = errorHttp(400, 'Bad Request');
-  return reply(res, reason, description);
-}
-function error503(
-  res: ServerResponse,
-  reason: string = '',
-  description: string
-) {
-  const reply = errorHttp(503, 'Service Unavailable');
-  return reply(res, reason, description);
-}
-function error500(
-  res: ServerResponse,
-  reason: string = '',
-  description: string = ''
-) {
-  const reply = errorHttp(500, 'Internal Server Error');
-  return reply(res, reason, description);
-}
 function response(data: any, reply: string) {
   // HACK: Skiped null check may be not assignable to parameter ------
   const writeHead = serverResponse(messageMapping.get(data.id)!);
@@ -402,14 +358,3 @@ function response(data: any, reply: string) {
 /*  permissions@oreilly.com.                                        */
 /*                                                                  */
 /* **************************************************************** */
-
-// // Extract the command name and arguments from the URL
-// const splitedUrl = (req?.url || '').split('/');
-// const command_name = splitedUrl.slice(1, 2).pop();
-
-// // Send the command and arguments to the selected actor
-// actor({
-//   id: idCounter.messageId,
-//   command_name,
-//   args: [...splitedUrl.slice(2)],
-// });
