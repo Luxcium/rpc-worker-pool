@@ -6,6 +6,7 @@ export {
 } from './codecs';
 export { commands } from './commands';
 export {
+  getStrategy,
   isStrategy,
   LEASTBUSY,
   RANDOM,

@@ -53,3 +53,12 @@ export const supportedStrategies = new Set<Strategies>([
 
 export const isStrategy = (strategy: unknown): strategy is Strategies =>
   supportedStrategies.has(strategy as any);
+
+export function getStrategy(
+  strategy: unknown,
+  defaultStrategy = ROUNDROBIN
+): Strategies {
+  return isStrategy(strategy)
+    ? strategies[strategy]
+    : getStrategy(defaultStrategy);
+}
