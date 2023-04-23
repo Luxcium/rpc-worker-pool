@@ -7,14 +7,15 @@ import { join } from 'node:path';
 import { isStrategy, strategies } from '../commands';
 import RpcWorkerPool from '../RpcWorkerPool.gpt';
 import { error400, error500, error503 } from './errorHttp';
+import { getRelativePaths } from './getRelativePaths';
 
 const VERBOSE = false;
 
 // ## DEFAULTS VALUE ―――――――――――――――――――――――――――――――――――――――――――――――――
-const PORT = '7010';
+const HTTP_ENDPOINT = '0.0.0.0';
 const HTTP_PORT = '8010';
 const ENDPOINT = '0.0.0.0';
-const HTTP_ENDPOINT = '0.0.0.0';
+const PORT = '7010';
 const THREADS = 4;
 const STRATEGY = 'roundrobin';
 const SCRIPT_FILE_URI = join(
@@ -22,18 +23,18 @@ const SCRIPT_FILE_URI = join(
 );
 
 // ## WILL PREFRE ENV IN DOCKER CONTAINER ――――――――――――――――――――――――――――
-const httpEndpointEnv = process.env['HTTP_ENDPOINT'];
-const httpPortEnv = process.env['HTTP_PORT'];
-const endpointEnv = process.env['ACTOR_ENDPOINT'];
-const portEnv = process.env['ACTOR_PORT'];
-const threadsEnv = process.env['ACTOR_THREADS'];
-const strategyEnv = process.env['ACTOR_STRATEGY'];
-const scriptFileEnv = process.env['SCRIPT_FILE_URI'];
+const httpEndpointEnv = process.env['HTTP_ENDPOINT']; //  export HTTP_ENDPOINT='0.0.0.0'
+const httpPortEnv = process.env['HTTP_PORT']; //  export HTTP_PORT='8010'
+const endpointEnv = process.env['ACTOR_ENDPOINT']; //  export ACTOR_ENDPOINT='0.0.0.0'
+const portEnv = process.env['ACTOR_PORT']; //  export ACTOR_PORT='7010'
+const threadsEnv = process.env['ACTOR_THREADS']; //  export ACTOR_THREADS=4
+const strategyEnv = process.env['ACTOR_STRATEGY']; //  export ACTOR_STRATEGY='roundrobin'
+const scriptFileEnv = process.env['SCRIPT_FILE_URI']; //  export SCRIPT_FILE_URI=
 
 // ## WILL PREFRE ARGV WHEN COMMAND LINE INVOQUATION ―――――――――――――――――
 const [
-  ,
-  ,
+  argv0,
+  argv1,
   httpConnParam,
   connecParam,
   threadsParam,
@@ -42,14 +43,21 @@ const [
 ] = process.argv;
 const [httpEndpointParam, httpPortParam] = (httpConnParam || '').split(':');
 const [endpointParam, portParam] = (connecParam || '').split(':');
+const runInDocker = process.env['RUNNING_IN_DOCKER'] === 'true';
 
 // ## WILL SET PRIORRITY ―――――――――――――――――――――――――――――――――――――――――――――
-const inDocker = (isInDocker: boolean) => (e: string, a: string) =>
-  isInDocker ? e || a : a || e;
-const priority = inDocker(process.env['RUNNING_IN_DOCKER'] === 'true');
+const inDocker =
+  (isInDocker: boolean) =>
+  <T>(e?: T, a?: T) =>
+    isInDocker ? e || a : a || e;
+const priority = inDocker(runInDocker);
 
 // ## WILL DEFINE PRIORRITY ――――――――――――――――――――――――――――――――――――――――――
-const define = (def: any) => (env: any, arg: any) => priority(env, arg) || def;
+const define =
+  <T>(defaultValue: T | string) =>
+  (env?: T | string, arg?: T | string) =>
+    priority(env, arg) || defaultValue;
+
 const defHttpEndPoint = define(HTTP_ENDPOINT);
 const defHttpPort = define(HTTP_PORT);
 const defEndPoint = define(ENDPOINT);
@@ -80,6 +88,7 @@ function randomActor() {
   const pool = [...actorSet];
   return pool[Math.floor(Math.random() * pool.length)];
 }
+
 /**
  * The ID of the next message.
  */
@@ -206,11 +215,80 @@ const HTTP_Server = createHTTP_Server((req, res): any => {
       // const queryString = fullUrl.search;
       // Get the fragment identifier
       // const fragmentIdentifier = fullUrl.hash;
-      error400(
-        res,
-        `${command_name}`,
-        `fullArgs: ${fullArgs}, args: ${args}, queryString: ${queryString}, fragmentIdentifier: ${fragmentIdentifier}`
-      );
+
+      if (command_name === 'infos') {
+        const paths = getRelativePaths(
+          '/projects/monorepo-one/rpc-worker-pool/docker/dist/server/worker.js',
+          '/projects/monorepo-one//rpc-worker-pool/docker/dist/server/server.js'
+        );
+        const defaults_ = {
+          PORT,
+          HTTP_PORT,
+          ENDPOINT,
+          HTTP_ENDPOINT,
+          THREADS,
+          STRATEGY,
+          SCRIPT_FILE_URI,
+        };
+        const envs_ = {
+          httpEndpointEnv: httpEndpointEnv,
+          httpPortEnv: httpPortEnv,
+          endpointEnv: endpointEnv,
+          portEnv: portEnv,
+          threadsEnv: threadsEnv,
+          strategyEnv: strategyEnv,
+          scriptFileEnv: scriptFileEnv,
+        };
+        const args_ = {
+          argv0,
+          argv1,
+          httpConnParam,
+          connecParam,
+          threadsParam,
+          strategyParam,
+          scriptFileParam,
+          splits: {
+            httpEndpointParam,
+            httpPortParam,
+            endpointParam,
+            portParam,
+          },
+        };
+        const definedValues = {
+          httpEndpoint,
+          httpPort,
+          actorEndpoint,
+          actorPort,
+          threads,
+          strategy_,
+          strategy,
+          scriptFileUri,
+        };
+        console.log('envs_', JSON.stringify({ ...envs_ }), envs_);
+
+        serverResponse(res)(200, 'OK', 'string').end(
+          JSON.stringify({
+            jsonrpc: '2.0',
+            pid: 'server: ' + process.pid,
+            result: {
+              paths,
+              worker_path: SCRIPT_FILE_URI,
+              DEFAULTS: defaults_,
+              ENVs: envs_,
+              ARGs: args_,
+              isInDocker: runInDocker,
+              definedValues,
+            },
+            id: idCounter.messageId,
+          })
+        );
+      } else {
+        error400(
+          res,
+          `${command_name}`,
+          `fullArgs: ${fullArgs}, args: ${args}, queryString: ${queryString}, fragmentIdentifier: ${fragmentIdentifier}`
+        );
+      }
       // sever would do something
     } else {
       error400(
@@ -221,7 +299,7 @@ const HTTP_Server = createHTTP_Server((req, res): any => {
     }
   } catch (error) {
     console.error(error);
-    return error500(res);
+    return error500(res, (error as any).message);
   }
 });
 
