@@ -1,3 +1,4 @@
+export type { Command } from './Command';
 export type { ErrorRPC } from './ErrorRPC';
 export type { MessageRPC } from './MessageRPC';
 export type { MsgObjectToWrap } from './MsgObjectToWrap';

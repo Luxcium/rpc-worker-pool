@@ -103,3 +103,75 @@ function asyncOnMessageWrap(fn: WraperFunction) {
     }
   };
 }
+
+// Define interfaces for each command's parameters and return type
+interface Command1Params {
+  param1: string;
+  param2: number;
+}
+
+interface Command1Result {
+  result: string;
+}
+
+// Define a mapping from command names to their respective interfaces
+type CommandMap = {
+  command1: { params: Command1Params; result: Command1Result };
+  // Add additional commands here...
+};
+
+// Use the CommandMap type to make the commands object strongly typed
+export const commands_2: {
+  [K in keyof CommandMap]: (
+    job_id: number,
+    params: CommandMap[K]['params']
+  ) => Promise<CommandMap[K]['result']>;
+} = {
+  command1: async (job_id, params) => {
+    // Implement command1 here...
+  },
+  // Add additional commands here...
+};
+
+export type Command<P extends any[], R> = {
+  description: string;
+  // Function to be used on the caller side, which takes some parameters and returns a Promise of a result.
+  callerSideFn: (...params: P) => Promise<R>;
+  // Function to be used on the receiver side, which takes some parameters and returns a Promise of a result.
+  receiverSideFn: (...params: P) => Promise<R>;
+  // Function to encode the result or error.
+  encodeFn: (result: R | Error) => string;
+  // Function to decode the result or error.
+  decodeFn: (result: string) => R | Error;
+};
+
+export function createCommand<P extends any[], R>(
+  description: string,
+  callerSideFn: (...params: P) => Promise<R>,
+  receiverSideFn: (...params: P) => Promise<R>,
+  encodeFn: (result: R | Error) => string,
+  decodeFn: (result: string) => R | Error
+): Command<P, R> {
+  return {
+    description,
+    callerSideFn,
+    receiverSideFn,
+    encodeFn,
+    decodeFn,
+  };
+}
+
+export const commands_3 = {
+  command1: createCommand(
+    'Description for command1',
+    async (param1, param2) => {
+      // Implement caller side function for command1.
+    },
+    async (param1, param2) => {
+      // Implement receiver side function for command1.
+    },
+    result => JSON.stringify(result),
+    result => JSON.parse(result)
+  ),
+  // Add more commands here...
+};

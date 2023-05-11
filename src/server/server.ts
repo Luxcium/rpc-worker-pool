@@ -101,8 +101,9 @@ const messageMapping = new Map<number, ServerResponse>();
 /**
  * A collection of actor handlers.
  */
-const actorSet = new Set();
-actorSet.add(async (data: any) => {
+const actorSet = new Set<(data: any) => any>();
+
+const primeActor = async (data: any) => {
   try {
     // Executor of the worker from pool.
     const timeBefore = performance.now();
@@ -154,7 +155,8 @@ actorSet.add(async (data: any) => {
   } catch (error) {
     console.error(error);
   }
-});
+};
+actorSet.add(primeActor);
 
 // ++ HTTP_Server ----------------------------------------------------
 
@@ -325,8 +327,8 @@ void actorEndpoint;
 void actorPort;
 const TCP_Server = createTCP_Server(tcp_client => {
   // The handler function is used to send responses back to this TCP client
-  const handler = (dataRequest: any) =>
-    tcp_client.write(JSON.stringify(dataRequest) + '\0\n\0'); // <1>
+  const handler = async (dataRequest: any) =>
+    void tcp_client.write(JSON.stringify(dataRequest) + '\0\n\0'); // <1>
 
   // Add the handler function to the actor pool
   void actorSet.add(handler);

@@ -1,6 +1,6 @@
 'use strict';
+import { Worker } from 'node:worker_threads';
 import { cpus } from 'os';
-import { Worker } from 'worker_threads';
 import { strategies, supportedStrategies, type Strategies } from './commands';
 
 const VERBOSE = false;
@@ -13,7 +13,7 @@ const CORES = cpus().length;
  * This class is intended to be used by the main thread of an application.
  * It creates a pool of worker threads that can execute remote procedure calls (RPCs) on behalf of the main thread.
  */
-export class RpcWorkerPool {
+export class RpcWorkerPool implements WorkerPool {
   /**
    * The number of worker threads in the pool. Defaults to the number of CPU cores.
    */
@@ -65,14 +65,14 @@ export class RpcWorkerPool {
   // Whether or not to enable verbose output.
   /**
    * Creates a new RpcWorkerPool object.
-   * @param path - The file path of the worker thread code.
+   * @param pathURI - The file path of the worker thread code.
    * @param size - The number of worker threads to create. Defaults to the number of CPU cores.
    * @param strategy - The strategy used to allocate tasks to worker threads. Defaults to 'leastbusy'.
    * @param verbosity - A boolean indicating whether logging is enabled. Defaults to false.
    * When logging is enabled, the pool will log messages to the console.
    */
   constructor(
-    path: string,
+    pathURI: string,
     size: number = 0,
     strategy: Strategies = strategies.leastbusy,
     verbosity = VERBOSE
@@ -96,7 +96,7 @@ export class RpcWorkerPool {
         {
           eval: true,
           workerData: {
-            runThisFileInTheWorker: path, // '/path/to/worker-script.ts'
+            runThisFileInTheWorker: pathURI, // '/path/to/worker-script.ts'
             workerId: worker_id,
           },
         }
@@ -117,13 +117,17 @@ export class RpcWorkerPool {
    * @param args - Optional arguments for the command.
    * @returns A promise that resolves to the result of the command execution.
    */
-  async exec(command_name: string, message_id: number, ...args: string[]) {
+  async exec<O = unknown>(
+    command_name: string,
+    message_id: number,
+    ...args: string[]
+  ): Promise<O> {
     const job_id = this.next_job_id++;
 
     // The message_id is provided for feedback purpose only.
     const worker = this.getWorker(message_id);
 
-    const promise = new Promise((resolve, reject) => {
+    const promise = new Promise<O>((resolve, reject) => {
       worker.in_flight_commands.set(job_id, { resolve, reject });
     });
     worker.worker.postMessage({ command_name, params: args, job_id });
@@ -136,7 +140,11 @@ export class RpcWorkerPool {
    * @param message_id - A message ID to associate with the command.
    * @returns An object representing the worker thread to use.
    */
-  getWorker(message_id = -1) {
+  getWorker(message_id = -1): {
+    worker: Worker;
+    in_flight_commands: Map<number, any>;
+    worker_id: number;
+  } {
     let worker_id: number = 0;
     switch (this.strategy) {
       case 'random':
@@ -169,19 +177,41 @@ export class RpcWorkerPool {
    * @param msg - The message received from the worker thread.
    * @param worker_id - The ID of the worker thread that sent the message.
    */
-  onMessageHandler(msg: any, worker_id: number) {
+  onMessageHandler(
+    msg: { result: any; error: unknown; job_id: number },
+    worker_id: number
+  ): void {
     const worker = this.workers[worker_id];
 
     const { result, error, job_id } = msg;
 
     // resolve: (value: any) => void, reject: (reason?: any) =>
-    const { resolve, reject } = worker.in_flight_commands.get(job_id);
-    worker.in_flight_commands.delete(job_id);
+    const { resolve, reject } = worker.in_flight_commands.get(job_id as number);
+    worker.in_flight_commands.delete(job_id as number);
 
     if (error) reject(error);
     else resolve(result);
   }
 }
+
+export interface WorkerPool {
+  exec: WorkerPoolExec;
+  getWorker(): {
+    worker: Worker;
+    in_flight_commands: Map<number, any>;
+    worker_id: number;
+  };
+  onMessageHandler(msg: any, worker_id: number): void;
+}
+
+export interface WorkerPoolExec {
+  <O = unknown>(
+    command_name: string,
+    message_id: number,
+    ...args: string[]
+  ): Promise<O>;
+}
+
 export default RpcWorkerPool;
 
 /* **************************************************************** */

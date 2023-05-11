@@ -3,8 +3,8 @@ import chalk from 'chalk';
 import { existsSync } from 'node:fs';
 import { createServer as createHTTP_Server } from 'node:http';
 import { createServer as createTCP_Server } from 'node:net';
-import { isStrategy, strategies } from './commands';
 import { RpcWorkerPool } from './RpcWorkerPool';
+import { isStrategy, strategies } from './commands';
 
 // ++ Initial Setup --------------------------------------------------
 /**
@@ -22,6 +22,15 @@ const workerScriptFileUri = `${__dirname}/worker.${
 }`;
 const threads = Number(threads_ || 0);
 const strategy = isStrategy(strategy_) ? strategy_ : strategies.roundrobin;
+
+// ++ new worker from RpcWorkerPool ----------------------------------
+// Create a new instance of RpcWorkerPool to handle communication with worker threads.
+const workerPool = new RpcWorkerPool(
+  workerScriptFileUri, // The URI of the worker script file.
+  threads, // The number of worker threads to spawn.
+  strategy, // The strategy for handling incoming requests.
+  VERBOSE1 // Whether or not to enable verbose output.
+);
 
 /**
  * The ID of the next message.
@@ -142,15 +151,6 @@ void TCP_Server.listen(Number(actorPort), actorEndpoint, () => {
       '\n\n\n\n'
   );
 });
-
-// ++ new worker from RpcWorkerPool ----------------------------------
-// Create a new instance of RpcWorkerPool to handle communication with worker threads.
-const workerPool = new RpcWorkerPool(
-  workerScriptFileUri, // The URI of the worker script file.
-  threads, // The number of worker threads to spawn.
-  strategy, // The strategy for handling incoming requests.
-  VERBOSE1 // Whether or not to enable verbose output.
-);
 
 // ++ actors.add -----------------------------------------------------
 // Add an actor handler to the actors set.
