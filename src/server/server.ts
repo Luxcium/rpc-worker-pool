@@ -2,15 +2,18 @@
 import chalk from 'chalk';
 import { existsSync } from 'node:fs';
 import { createServer as createHTTP_Server, ServerResponse } from 'node:http';
-import { createServer as createTCP_Server } from 'node:net';
 import { join } from 'node:path';
 import { isStrategy, strategies } from '../commands';
 import RpcWorkerPool from '../RpcWorkerPool.gpt';
 import { error400, error500, error503 } from './errorHttp';
 import { getRelativePaths } from './getRelativePaths';
+import { getTcpServer } from './getTcpServer';
+import { response } from './response';
+import { serverResponse } from './serverResponse';
 
 const VERBOSE = false;
 
+// #region ++ Initialization ----------------------------------------↓
 // ## DEFAULTS VALUE ―――――――――――――――――――――――――――――――――――――――――――――――――
 const HTTP_ENDPOINT = '0.0.0.0';
 const HTTP_PORT = '8010';
@@ -75,34 +78,14 @@ const threads = Number(defThreads(threadsEnv, threadsParam));
 const strategy_ = String(defStrategy(strategyEnv, strategyParam));
 const strategy = isStrategy(strategy_) ? strategy_ : strategies.roundrobin;
 const scriptFileUri = defScriptFileUri(scriptFileEnv, scriptFileParam);
-
+// #endregion ++ Initialization -------------------------------------↑
+// #region ++ CREATE POOL INSTANCES ---------------------------------↓
 // ## WILL CREATE WORKER POOL INSTANCE ―――――――――――――――――――――――――――――――
 const workerPool = new RpcWorkerPool(scriptFileUri, threads, strategy, VERBOSE);
 
-// ++ randomActor() --------------------------------------------------
-/**
- * Returns a randomly selected actor handler.
- * @returns An actor handler from the actors collection.
- */
-function randomActor() {
-  const pool = [...actorSet];
-  return pool[Math.floor(Math.random() * pool.length)];
-}
-
-/**
- * The ID of the next message.
- */
 const idCounter = { messageId: 0, actorId: 0 };
-/**
- * A map of message IDs to HTTP responses.
- */
-const messageMapping = new Map<number, ServerResponse>();
-
-/**
- * A collection of actor handlers.
- */
-const actorSet = new Set<(data: any) => any>();
-
+const messageMap = new Map<number, ServerResponse>();
+export const actorSet = new Set<(data: any) => any>();
 const primeActor = async (data: any) => {
   try {
     // Executor of the worker from pool.
@@ -151,15 +134,22 @@ const primeActor = async (data: any) => {
     );
 
     // End the http reponse with the message
-    response(data, httpReply);
+    response(data, httpReply, messageMap);
   } catch (error) {
     console.error(error);
   }
 };
 actorSet.add(primeActor);
-
-// ++ HTTP_Server ----------------------------------------------------
-
+/**
+ * Returns a randomly selected actor handler.
+ * @returns An actor handler from the actors collection.
+ */
+function randomActor() {
+  const pool = [...actorSet];
+  return pool[Math.floor(Math.random() * pool.length)];
+}
+// #endregion ++ CREATE POOL INSTANCES ------------------------------↑
+// #region ++ HTTP_Server -------------------------------------------↓
 /**
  * The HTTP Server Handler for incoming HTTP requests. This handler will
  * choose a random actor and send the request to it. The actor will
@@ -167,143 +157,151 @@ actorSet.add(primeActor);
  * will wait for the response from the TCP Server and send it to the
  * client.
  */
-const HTTP_Server = createHTTP_Server((req, res): any => {
-  try {
-    idCounter.messageId++;
+const HTTP_Server = getHttpServer();
 
-    // End if there are no actors, respond with an error message
-    if (actorSet.size === 0) {
-      const reason = 'EMPTY ACTOR POOL';
-      const description = 'No actors available to handle requests.';
-      return error503(res, reason, description);
-    }
+export function getHttpServer() {
+  const HTTP_Server = createHTTP_Server((req, res): any => {
+    try {
+      idCounter.messageId++;
 
-    // Select a random actor to handle the request
-    const actor: any = randomActor();
+      // End if there are no actors, respond with an error message
+      if (actorSet.size === 0) {
+        const reason = 'EMPTY ACTOR POOL';
+        const description = 'No actors available to handle requests.';
+        return error503(res, reason, description);
+      }
 
-    // Store the response object with the message ID for later use
-    void messageMapping.set(idCounter.messageId, res);
+      // Select a random actor to handle the request
+      const actor: any = randomActor();
 
-    // Extract the command name, query string, and fragment identifier from the URL
-    const fullUrl = new URL(req?.url || '', `http:${'//' + req.headers.host}`);
-    // Split the path into segments and filter out empty strings
-    const pathSegments = fullUrl.pathname.split('/').filter(Boolean);
+      // Store the response object with the message ID for later use
+      void messageMap.set(idCounter.messageId, res);
 
-    const destination = pathSegments.shift();
-    const fullArgs = pathSegments;
-    // Get the query string
-    const queryString = fullUrl.search;
-    // Get the fragment identifier
-    const fragmentIdentifier = fullUrl.hash;
-    if (destination === 'worker') {
-      // Remove and store the first segment as the command name
-      const command_name = pathSegments.shift();
-      // The remaining segments are the arguments
-      const args = pathSegments;
+      // Extract the command name, query string, and fragment identifier from the URL
+      const fullUrl = new URL(
+        req?.url || '',
+        `http:${'//' + req.headers.host}`
+      );
+      // Split the path into segments and filter out empty strings
+      const pathSegments = fullUrl.pathname.split('/').filter(Boolean);
 
-      // Send the command and arguments, along with the query string and fragment identifier, to the selected actor
-      actor({
-        id: idCounter.messageId,
-        command_name,
-        args,
-        // args: { args, queryString, fragmentIdentifier },
-      });
-    } else if (destination === 'server') {
-      // Remove and store the first segment as the command name
-      const command_name = pathSegments.shift();
-      // The remaining segments are the arguments
-      const args = pathSegments;
+      const destination = pathSegments.shift();
+      const fullArgs = pathSegments;
       // Get the query string
-      // const queryString = fullUrl.search;
+      const queryString = fullUrl.search;
       // Get the fragment identifier
-      // const fragmentIdentifier = fullUrl.hash;
+      const fragmentIdentifier = fullUrl.hash;
+      if (destination === 'worker') {
+        // Remove and store the first segment as the command name
+        const command_name = pathSegments.shift();
+        // The remaining segments are the arguments
+        const args = pathSegments;
 
-      if (command_name === 'infos') {
-        const paths = getRelativePaths(
-          '/projects/monorepo-one/rpc-worker-pool/docker/dist/server/worker.js',
-          '/projects/monorepo-one//rpc-worker-pool/docker/dist/server/server.js'
-        );
-        const defaults_ = {
-          PORT,
-          HTTP_PORT,
-          ENDPOINT,
-          HTTP_ENDPOINT,
-          THREADS,
-          STRATEGY,
-          SCRIPT_FILE_URI,
-        };
-        const envs_ = {
-          httpEndpointEnv: httpEndpointEnv,
-          httpPortEnv: httpPortEnv,
-          endpointEnv: endpointEnv,
-          portEnv: portEnv,
-          threadsEnv: threadsEnv,
-          strategyEnv: strategyEnv,
-          scriptFileEnv: scriptFileEnv,
-        };
-        const args_ = {
-          argv0,
-          argv1,
-          httpConnParam,
-          connecParam,
-          threadsParam,
-          strategyParam,
-          scriptFileParam,
-          splits: {
-            httpEndpointParam,
-            httpPortParam,
-            endpointParam,
-            portParam,
-          },
-        };
-        const definedValues = {
-          httpEndpoint,
-          httpPort,
-          actorEndpoint,
-          actorPort,
-          threads,
-          strategy_,
-          strategy,
-          scriptFileUri,
-        };
-        console.log('envs_', JSON.stringify({ ...envs_ }), envs_);
+        // Send the command and arguments, along with the query string and fragment identifier, to the selected actor
+        actor({
+          id: idCounter.messageId,
+          command_name,
+          args,
+          // args: { args, queryString, fragmentIdentifier },
+        });
+      } else if (destination === 'server') {
+        // Remove and store the first segment as the command name
+        const command_name = pathSegments.shift();
+        // The remaining segments are the arguments
+        const args = pathSegments;
+        // Get the query string
+        // const queryString = fullUrl.search;
+        // Get the fragment identifier
+        // const fragmentIdentifier = fullUrl.hash;
 
-        serverResponse(res)(200, 'OK', 'string').end(
-          JSON.stringify({
-            jsonrpc: '2.0',
-            pid: 'server: ' + process.pid,
-            result: {
-              paths,
-              worker_path: SCRIPT_FILE_URI,
-              DEFAULTS: defaults_,
-              ENVs: envs_,
-              ARGs: args_,
-              isInDocker: runInDocker,
-              definedValues,
+        if (command_name === 'infos') {
+          const paths = getRelativePaths(
+            '/projects/monorepo-one/rpc-worker-pool/docker/dist/server/worker.js',
+            '/projects/monorepo-one/rpc-worker-pool/docker/dist/server/server.js'
+          );
+          const defaults_ = {
+            PORT,
+            HTTP_PORT,
+            ENDPOINT,
+            HTTP_ENDPOINT,
+            THREADS,
+            STRATEGY,
+            SCRIPT_FILE_URI,
+          };
+          const envs_ = {
+            httpEndpointEnv: httpEndpointEnv,
+            httpPortEnv: httpPortEnv,
+            endpointEnv: endpointEnv,
+            portEnv: portEnv,
+            threadsEnv: threadsEnv,
+            strategyEnv: strategyEnv,
+            scriptFileEnv: scriptFileEnv,
+          };
+          const args_ = {
+            argv0,
+            argv1,
+            httpConnParam,
+            connecParam,
+            threadsParam,
+            strategyParam,
+            scriptFileParam,
+            splits: {
+              httpEndpointParam,
+              httpPortParam,
+              endpointParam,
+              portParam,
             },
-            id: idCounter.messageId,
-          })
-        );
+          };
+          const definedValues = {
+            httpEndpoint,
+            httpPort,
+            actorEndpoint,
+            actorPort,
+            threads,
+            strategy_,
+            strategy,
+            scriptFileUri,
+          };
+          console.log('envs_', JSON.stringify({ ...envs_ }), envs_);
+
+          serverResponse(res)(200, 'OK', 'string').end(
+            JSON.stringify({
+              jsonrpc: '2.0',
+              pid: 'server: ' + process.pid,
+              result: {
+                paths,
+                worker_path: SCRIPT_FILE_URI,
+                DEFAULTS: defaults_,
+                ENVs: envs_,
+                ARGs: args_,
+                isInDocker: runInDocker,
+                definedValues,
+              },
+              id: idCounter.messageId,
+            })
+          );
+        } else {
+          error400(
+            res,
+            `${command_name}`,
+            `fullArgs: ${fullArgs}, args: ${args}, queryString: ${queryString}, fragmentIdentifier: ${fragmentIdentifier}`
+          );
+        }
+        // sever would do something
       } else {
         error400(
           res,
-          `${command_name}`,
-          `fullArgs: ${fullArgs}, args: ${args}, queryString: ${queryString}, fragmentIdentifier: ${fragmentIdentifier}`
+          `UNIMPLEMENTD DESTINATION: ${destination}`,
+          `fullArgs: ${fullArgs}, queryString: ${queryString}, fragmentIdentifier: ${fragmentIdentifier}`
         );
       }
-      // sever would do something
-    } else {
-      error400(
-        res,
-        `UNIMPLEMENTD DESTINATION: ${destination}`,
-        `fullArgs: ${fullArgs}, queryString: ${queryString}, fragmentIdentifier: ${fragmentIdentifier}`
-      );
+    } catch (error) {
+      console.error(error);
+      return error500(res, (error as any).message);
     }
-  } catch (error) {
-    console.error(error);
-    return error500(res, (error as any).message);
-  }
-});
+  });
+  return HTTP_Server;
+}
 
 HTTP_Server.listen(Number(httpPort), httpEndpoint, () => {
   console.info(
@@ -314,51 +312,15 @@ HTTP_Server.listen(Number(httpPort), httpEndpoint, () => {
       chalk.magenta(`${httpPort}`)
   );
 });
-
-// ++ TCP_Server -----------------------------------------------------
+// #endregion ++ HTTP_Server ----------------------------------------↑
+// #region ++ TCP_Server --------------------------------------------↓
 /**
  * The TCP Server Handler for incoming TCP requests. This handler will
  * wait for the actor response and send it to the HTTP Server Handler.
  * The HTTP Server Handler will wait for the response from the TCP
  * Server and send it to the client.
  */
-void createTCP_Server;
-void actorEndpoint;
-void actorPort;
-const TCP_Server = createTCP_Server(tcp_client => {
-  // The handler function is used to send responses back to this TCP client
-  const handler = async (dataRequest: any) =>
-    void tcp_client.write(JSON.stringify(dataRequest) + '\0\n\0'); // <1>
-
-  // Add the handler function to the actor pool
-  void actorSet.add(handler);
-  // Log the current size of the actor pool
-  void console.info('actor pool connected', actorSet.size);
-
-  // Remove the handler function from the actor pool when the client disconnects
-  void tcp_client.on('end', () => {
-    void actorSet.delete(handler); // <2>
-    // Log the current size of the actor pool
-    void console.info('actor pool disconnected', actorSet.size);
-  });
-
-  // Handle incoming data from the TCP client
-  void tcp_client.on('data', raw_data => {
-    // Split the incoming data by the defined delimiter and remove the last (empty) null, new line, null.
-    void String(raw_data)
-      .split('\0\n\0')
-      .slice(0, -1) // Remove the last (empty) null, new line, null.
-      .forEach(chunk => {
-        // Parse the incoming data as a JSON object
-        const data = JSON.parse(chunk);
-        // Retrieve the HTTP response object associated with the message ID
-        const reply = JSON.stringify(data).replaceAll('\0', '');
-
-        response(data, reply);
-      });
-  });
-});
-
+const TCP_Server = getTcpServer(actorSet, response, messageMap);
 TCP_Server.listen(Number(actorPort), actorEndpoint, () => {
   console.info(
     '> ' +
@@ -369,72 +331,4 @@ TCP_Server.listen(Number(actorPort), actorEndpoint, () => {
       '\n\n\n\n'
   );
 });
-
-// ++ actors.add -----------------------------------------------------
-// Add an actor handler to the actors set.
-
-export function serverResponse(res: ServerResponse) {
-  return (
-    statusCode: number,
-    statusMessage: string,
-    ContentType: string
-  ) /* => (reply: string= statusMessage) */ => {
-    res.statusCode = statusCode;
-    res.statusMessage = statusMessage;
-    return res.writeHead(statusCode, statusMessage, {
-      'Content-Type': ContentType,
-    });
-  };
-}
-
-function response(data: any, reply: string) {
-  // HACK: Skiped null check may be not assignable to parameter ------
-  const writeHead = serverResponse(messageMapping.get(data.id)!);
-
-  try {
-    const res = writeHead(200, 'Success', 'application/json');
-    res.end(reply.replaceAll('\0', '').replaceAll('\n', ''));
-  } catch (error) {
-    console.error(error);
-    const res = writeHead(500, 'Internal Server Error', 'text/plain');
-    res.end('Internal Server Error');
-  }
-  return messageMapping.delete(data.id);
-}
-/* **************************************************************** */
-/*                                                                  */
-/*  MIT LICENSE                                                     */
-/*                                                                  */
-/*  Copyright © 2021-2022 Benjamin Vincent Kasapoglu (Luxcium)      */
-/*                                                                  */
-/*  NOTICE:                                                         */
-/*  O’Reilly Online Learning                                        */
-/*                                                                  */
-/*  Title: “Multithreaded JavaScript”                               */
-/*  Author: “by Thomas Hunter II and Bryan English”                 */
-/*  Publisher: “O’Reilly”                                           */
-/*  Copyright: “© 2022 Thomas Hunter II and Bryan English”          */
-/*  ISBN: “978-1-098-10443-6.”                                      */
-/*                                                                  */
-/*  Using Code Examples                                             */
-/*  Supplemental material (code examples, exercises, etc.)          */
-/*  is available for download at                                    */
-/*  https://github.com/MultithreadedJSBook/code-samples.            */
-/*                                                                  */
-/*  In general, if example code is offered with this book, you may  */
-/*  use it in your programs and documentation. You do not need to   */
-/*  contact us for permission unless you’re reproducing a           */
-/*  significant portion of the code. For example, writing a         */
-/*  program that uses several chunks of code from this book does    */
-/*  not require permission. Selling or distributing examples from   */
-/*  O’Reilly books does require permission. Answering a question by */
-/*  citing this book and quoting example code does not require      */
-/*  permission. Incorporating a significant amount of example code  */
-/*  from this book into your product’s documentation does require   */
-/*  permission.                                                     */
-/*                                                                  */
-/*  If you feel your use of code examples falls outside fair use or */
-/*  the permission given above, feel free to contact us at          */
-/*  permissions@oreilly.com.                                        */
-/*                                                                  */
-/* **************************************************************** */
+// #endregion ++ TCP_Server -----------------------------------------↑

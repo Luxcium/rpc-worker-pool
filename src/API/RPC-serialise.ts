@@ -6,7 +6,16 @@
  * @param data
  */
 
-const PARSE_ERROR = (id: string | number | null, data: any) => ({
+import { InspectOptions } from 'util';
+import {
+  RpcLeft,
+  RpcNotification,
+  RpcRequest,
+  RpcResponseError,
+  RpcRight,
+} from '../types/specs';
+
+const PARSE_ERROR = (id: number | null, data: any) => ({
   jsonrpc: '2.0' as const,
   error: {
     code: -32700 as const,
@@ -23,7 +32,7 @@ const PARSE_ERROR = (id: string | number | null, data: any) => ({
  * @param id
  * @param data
  */
-const INVALID_REQUEST = (id: string | number | null, data: any) => ({
+const INVALID_REQUEST = (id: number | null, data: any) => ({
   jsonrpc: '2.0' as const,
   error: {
     code: -32600 as const,
@@ -40,7 +49,7 @@ const INVALID_REQUEST = (id: string | number | null, data: any) => ({
  * @param id
  * @param data
  */
-const METHOD_NOT_FOUND = (id: string | number | null, data: any) => ({
+const METHOD_NOT_FOUND = (id: number | null, data: any) => ({
   jsonrpc: '2.0' as const,
   error: {
     code: -32601 as const,
@@ -56,7 +65,7 @@ const METHOD_NOT_FOUND = (id: string | number | null, data: any) => ({
  * @param id
  * @param data
  */
-const INVALID_PARAMS = (id: string | number | null, data: any) => ({
+const INVALID_PARAMS = (id: number | null, data: any) => ({
   jsonrpc: '2.0' as const,
   error: {
     code: -32602 as const,
@@ -65,12 +74,27 @@ const INVALID_PARAMS = (id: string | number | null, data: any) => ({
   },
   id,
 });
+
+/*
+          } catch (error: any) {
+            const errorRPC = {
+              code: -32_603,
+              message:
+                'Internal error!!! (Internal JSON-RPC error). ' +
+                (error.message || ''),
+              error,
+            };
+            console.error(String({ ...messageRPC, error: errorRPC }));
+            return { ...messageRPC, error: errorRPC };
+          }
+ */
+
 /**
  * INTERNAL_ERROR: 	-32603 	Internal JSON-RPC error.
  * @param id
  * @param data
  */
-const INTERNAL_ERROR = (id: string | number | null, data: any) => ({
+const INTERNAL_ERROR = (id: number | null, data: any) => ({
   jsonrpc: '2.0' as const,
   error: {
     code: -32603 as const,
@@ -87,14 +111,14 @@ const INTERNAL_ERROR = (id: string | number | null, data: any) => ({
  * @param message
  */
 const SERVER_ERROR = (
-  id: string | number | null,
+  id: number | null,
   data: any,
-  error: number = 0,
+  code: number = 0,
   message: string = ''
 ) => ({
   jsonrpc: '2.0' as const,
   error: {
-    code: -32000 - Math.abs(error % 100),
+    code: -32000 - Math.abs(code % 100),
     message: `SERVER_ERROR: ${message} (server-error).` as const,
     data,
   },
@@ -111,18 +135,17 @@ const SERVER_ERROR = (
 const APPLICATION_ERROR = (
   id: string | number | null,
   data: any,
-  error: number = 0,
+  code: number = 0,
   message: string = ''
 ) => ({
   jsonrpc: '2.0' as const,
   error: {
-    code: -31999 + Math.abs(error % (32768 - 32099 + 1)),
+    code: -31999 + Math.abs(code % 31999),
     message: `APPLICATION_ERROR:  ${message} (application error)` as const,
     data,
   },
   id,
-}); // -31999
-
+});
 export const RPC_ERRORS_FNS = {
   PARSE_ERROR,
   INVALID_REQUEST,
@@ -132,3 +155,72 @@ export const RPC_ERRORS_FNS = {
   SERVER_ERROR,
   APPLICATION_ERROR,
 };
+
+export function baseRpcRequest<Q extends Array<any> | Record<string, any>>(
+  method: string
+) {
+  return (params: Q) =>
+    (id: number): RpcRequest<Q> => ({
+      jsonrpc: '2.0' as const,
+      method,
+      params,
+      id,
+    });
+}
+export function baseRpcNotification<N extends Array<any> | Record<string, any>>(
+  method: string
+): (params: N) => (_id: null) => RpcNotification<N>;
+export function baseRpcNotification<N extends Array<any> | Record<string, any>>(
+  method: string,
+  verbose: false
+): (params: N) => (_id: null) => RpcNotification<N>;
+export function baseRpcNotification<N extends Array<any> | Record<string, any>>(
+  method: string,
+  verbose: true
+): (params: N) => (_id: null) => RpcNotification<N>;
+export function baseRpcNotification<N extends Array<any> | Record<string, any>>(
+  method: string,
+  verbose: true,
+  options: InspectOptions
+): (params: N) => (_id: null) => RpcNotification<N>;
+export function baseRpcNotification<N extends Array<any> | Record<string, any>>(
+  method: string,
+  verbose = true,
+  options?: InspectOptions
+): (params: N) => (_id: null) => RpcNotification<N> {
+  return (params: N) =>
+    (_id: null): RpcNotification<N> => {
+      const notification = {
+        jsonrpc: '2.0' as const,
+        method,
+        params,
+      };
+      verbose && console.dir(notification, options);
+      return notification;
+    };
+}
+
+export function baseRpcResponseRight<R>(result: R) {
+  return (id: number): RpcRight<R> => ({
+    jsonrpc: '2.0' as const,
+    result,
+    id,
+  });
+}
+export function baseRpcResponseLeft(error: RpcResponseError) {
+  return (id: number | null): RpcLeft => ({
+    jsonrpc: '2.0' as const,
+    error,
+    id,
+  });
+}
+export function baseRpcResponseError(code: number, message: string) {
+  return (data?: any): ((id: number | null) => RpcLeft) => {
+    const responseError: RpcResponseError = {
+      code,
+      message,
+      data,
+    };
+    return baseRpcResponseLeft(responseError);
+  };
+}

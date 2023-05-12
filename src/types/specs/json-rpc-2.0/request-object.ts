@@ -25,6 +25,12 @@
  * Notifications are not confirmable by definition since they do not have
  * a Response object to be returned. As such, the Client would not be aware
  * of any errors (e.g., "Invalid params", "Internal error").
+ * \
+ *  \
+ * Based on the JSON-RPC 2.0 Specification documentation \
+ * Copyright (C) 2007-2010 by the JSON-RPC Working Group
+ * @see {@link https://www.jsonrpc.org/specification}
+ *
  */
 export interface RpcNotification<N extends Array<any> | Record<string, any>> {
   /**
@@ -59,7 +65,9 @@ export interface RpcNotification<N extends Array<any> | Record<string, any>> {
  *    }
  * ```
  * A RPC call is represented by sending a Request object to a Server.
- *
+ * \
+ * \
+ * Based on the JSON-RPC 2.0 Specification documentation \
  * Copyright (C) 2007-2010 by the JSON-RPC Working Group
  * @see {@link https://www.jsonrpc.org/specification}
  *
@@ -102,7 +110,7 @@ export interface RpcRequest<P extends Array<any> | Record<string, any>> {
    * if included. This member is used to correlate the context between
    * the two objects.
    */
-  id?: string | number;
+  id: string | number;
 }
 
 /*

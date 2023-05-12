@@ -1,5 +1,5 @@
 import type { ServerResponse } from 'node:http';
-import { serverResponse } from './server';
+import { serverResponse } from './serverResponse';
 
 export function errorHttp(statusCode: number, statusMessage: string) {
   return (res: ServerResponse, reason: string = '', description: string) => {

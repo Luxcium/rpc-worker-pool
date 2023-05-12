@@ -29,6 +29,12 @@
  *   if included. This member is used to correlate the context between the two objects.
  *
  * @see {@link RpcResponseError}
+ * \
+ * \
+ * Based on the JSON-RPC 2.0 Specification documentation \
+ * Copyright (C) 2007-2010 by the JSON-RPC Working Group
+ * @see {@link https://www.jsonrpc.org/specification}
+ *
  */
 export interface RpcRight<R> {
   /**
@@ -79,6 +85,12 @@ export interface RpcRight<R> {
  *   if included. This member is used to correlate the context between the two objects.
  *
  * @see {@link RpcResponseError}
+ * \
+ * \
+ * Based on the JSON-RPC 2.0 Specification documentation \
+ * Copyright (C) 2007-2010 by the JSON-RPC Working Group
+ * @see {@link https://www.jsonrpc.org/specification}
+ *
  */
 export interface RpcLeft {
   /**
@@ -124,6 +136,11 @@ export interface RpcLeft {
  * - data: A Primitive or Structured value that contains additional information about the error.
  *   This may be omitted. The value of this member is defined by the Server
  *   (e.g. detailed error information, nested errors, etc.).
+ *
+ * Based on the JSON-RPC 2.0 Specification documentation \
+ * Copyright (C) 2007-2010 by the JSON-RPC Working Group
+ * @see {@link https://www.jsonrpc.org/specification}
+ *
  */
 export interface RpcResponseError {
   /**
@@ -166,6 +183,12 @@ export interface RpcResponseError {
  * @see {@link RpcRight}
  * @see {@link RpcLeft}
  * @see {@link RpcResponseError}
+ * \
+ * \
+ * Based on the JSON-RPC 2.0 Specification documentation \
+ * Copyright (C) 2007-2010 by the JSON-RPC Working Group
+ * @see {@link https://www.jsonrpc.org/specification}
+ *
  */
 export type RpcResponse<T> = RpcRight<T> | RpcLeft;
 

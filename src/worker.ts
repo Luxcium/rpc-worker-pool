@@ -2,6 +2,7 @@
 // #!! Consumed by the RpcWorkerPool class via path the to this file.
 
 import { parentPort } from 'node:worker_threads';
+import { INTERNAL_ERROR } from './API';
 import { commands } from './commands';
 import { MessageRPC, MsgObjectToWrap, WraperFunction } from './types';
 /**
@@ -47,6 +48,7 @@ void (function MAIN(): void {
             const resultRPC = await commands[command_name](job_id, ...params);
             return { ...messageRPC, result: resultRPC };
           } catch (error: any) {
+            INTERNAL_ERROR(null, error);
             const errorRPC = {
               code: -32_603,
               message:
