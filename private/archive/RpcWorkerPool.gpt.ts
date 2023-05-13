@@ -1,6 +1,10 @@
 import { cpus } from 'os';
 import { Worker } from 'worker_threads';
-import { strategies, supportedStrategies, type Strategies } from './commands';
+import {
+  strategies,
+  supportedStrategies,
+  type Strategies,
+} from '../../src/commands';
 
 const VERBOSE = false;
 const CORES = cpus().length;
