@@ -4,7 +4,7 @@
 import { parentPort } from 'node:worker_threads';
 import { INTERNAL_ERROR } from './API';
 import { methods } from './commands';
-import { MessageRPC, MsgObjectToWrap, WraperFunction } from './types';
+import { RpcRequest } from './types';
 /**
  * The main function that runs the worker process.
  *
@@ -36,63 +36,62 @@ import { MessageRPC, MsgObjectToWrap, WraperFunction } from './types';
     if (!parentPort) throw new Error('parentPort is missing or is undefined');
     parentPort.on(
       'message',
-      asyncOnMessageWrap(
-        async ({ command_name, params, job_ref }: MsgObjectToWrap) => {
-          const messageRPC: MessageRPC = {
-            jsonrpc: '2.0',
-            job_ref,
-            pid: 'worker: ' + process.pid,
-          };
-
-          try {
-            const resultRPC = await methods[command_name](job_ref, ...params);
-            return { ...messageRPC, result: resultRPC };
-          } catch (error: any) {
-            INTERNAL_ERROR(null, error);
-            const errorRPC = {
-              code: -32_603,
-              message:
-                'Internal error!!! (Internal JSON-RPC error). ' +
-                (error.message || ''),
-              error,
-            };
-            console.error(String({ ...messageRPC, error: errorRPC }));
-            return { ...messageRPC, error: errorRPC };
-          }
+      asyncOnMessageWrap(async (rpcRequest: RpcRequest<string[]>) => {
+        const { method } = rpcRequest;
+        try {
+          const resultRPC = await methods[method](rpcRequest);
+          return resultRPC;
+        } catch (error) {
+          const errorRPC = INTERNAL_ERROR(rpcRequest.id, error);
+          console.error(errorRPC);
+          return errorRPC;
         }
-      )
+      })
     );
   } catch (error) {
     console.error('Error communicating with parentPort:', error);
   }
+
   return;
 })();
+
 /**
+ * Wraps a function with asynchronous message handling for worker
+ * threads.
+ *
+ * This function is intended to be used as a utility for processing
+ * messages in worker threads.
+ * It abstracts away some of the complexity of sending and receiving
+ * messages, and ensures that
+ * messages are handled asynchronously and errors are handled
+ * properly.
+ *
  * @internal
- * Wraps a function with async message handling for worker threads.
- *
- * @param fn - The function to wrap, which takes a message object of type `MsgObjectToWrap` and returns a `Promise<any>`.
- *
- * @returns A new `async` function that takes a message object of type `MsgObjectToWrap` and returns a `Promise<any>`.
- * The returned function handles message passing between worker threads by checking that `parentPort`
- * is defined, calling `fn` with the message object, and logging any errors that occur during message handling.
+ * @typeparam P - The type of parameters for the `RpcRequest`. Default to string array.
+ * @param fn - The function to wrap, which takes a message object of
+ * type `RpcRequest<P>` and returns a `Promise<any>`.
+ * @returns A new `async` function that takes a message object of type
+ * `RpcRequest<P>` and returns a `Promise<any>`.
  *
  * @remarks
- * This function is intended to be used as a utility for processing messages in worker threads.
- * It abstracts away some of the complexity of sending and receiving messages, and ensures that
- * messages are handled asynchronously and errors are handled properly.
+ * The returned function handles message passing between worker
+ * threads by checking that `parentPort`
+ * is defined, calling `fn` with the message object, and logging
+ * any errors that occur during message handling.
  *
  * @example
  * ```
- * const handleMessage = asyncOnMessageWrap(async (msg: MsgObjectToWrap) => {
+ * const handleMessage = asyncOnMessageWrap(async (msg: RpcRequest<string[]>) => {
  *   // Do some work with the message object...
  * });
  *
  * worker.on('message', handleMessage);
  * ```
  */
-function asyncOnMessageWrap(fn: WraperFunction) {
-  return async function (msg: MsgObjectToWrap) {
+function asyncOnMessageWrap<P extends Array<string> = string[]>(
+  fn: (msg: RpcRequest<P>) => Promise<any>
+) {
+  return async function (msg: RpcRequest<P>) {
     try {
       if (!parentPort) throw new Error('parentPort is undefined');
       void parentPort.postMessage(await fn(msg));
@@ -104,3 +103,19 @@ function asyncOnMessageWrap(fn: WraperFunction) {
     }
   };
 }
+
+// export function asyncOnMessageWrap2(fn: WraperFunction) {
+//   return async function <P extends Array<string> = string[]>(
+//     msg: RpcRequest<P>
+//   ) {
+//     try {
+//       if (!parentPort) throw new Error('parentPort is undefined');
+//       void parentPort.postMessage(await fn<P>(msg));
+//     } catch (error) {
+//       void console.error(
+//         'Worker failed to reply (postMessage) to parentPort:',
+//         error
+//       );
+//     }
+//   };
+// }

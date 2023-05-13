@@ -1,11 +1,4 @@
 export {
-  decodeSanitizedURI,
-  deserializeURI,
-  sanitizeURI,
-  serializeURI,
-} from './codecs';
-export { methods } from './commands';
-export {
   LEASTBUSY,
   RANDOM,
   ROUNDROBIN,
@@ -13,5 +6,17 @@ export {
   isStrategy,
   strategies,
   supportedStrategies,
-} from './strategies';
-export type { Leastbusy, Random, Roundrobin, Strategies } from './strategies';
+} from '../server/utils/strategies';
+export type {
+  Leastbusy,
+  Random,
+  Roundrobin,
+  Strategies,
+} from '../server/utils/strategies';
+export {
+  decodeSanitizedURI,
+  deserializeURI,
+  sanitizeURI,
+  serializeURI,
+} from './codecs';
+export { methods } from './commands';

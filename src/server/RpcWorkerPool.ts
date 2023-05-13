@@ -2,9 +2,8 @@
 import { Worker } from 'node:worker_threads';
 import { cpus } from 'os';
 import { strategies, supportedStrategies, type Strategies } from '../commands';
-import { RpcRequest } from '../types/specs';
+import { RpcRequest, RpcResponse, WorkerPool, WorkerPoolRpc } from '../types';
 
-const VERBOSE = false;
 const CORES = cpus().length;
 
 /**
@@ -14,7 +13,7 @@ const CORES = cpus().length;
  * This class is intended to be used by the main thread of an application.
  * It creates a pool of worker threads that can execute remote procedure calls (RPCs) on behalf of the main thread.
  */
-export class RpcWorkerPool implements WorkerPool {
+export class RpcWorkerPool implements WorkerPool, WorkerPoolRpc {
   /**
    * The number of worker threads in the pool. Defaults to the number of CPU cores.
    */
@@ -76,7 +75,7 @@ export class RpcWorkerPool implements WorkerPool {
     pathURI: string,
     size: number = 0,
     strategy: Strategies = strategies.leastbusy,
-    verbosity = VERBOSE
+    verbosity = false
   ) {
     this.size = size < 0 ? Math.max(CORES + size, 1) : size || CORES;
     this.strategy = supportedStrategies.has(strategy)
@@ -109,6 +108,15 @@ export class RpcWorkerPool implements WorkerPool {
         this.onMessageHandler(msg, worker_tag);
       });
     }
+  }
+  async execRpc<O = unknown>(
+    rpcRequest: RpcRequest<string[]>
+  ): Promise<RpcResponse<O, unknown>> {
+    return this.exec(
+      rpcRequest.method,
+      Number(rpcRequest.id),
+      ...(rpcRequest.params || [])
+    );
   }
   // ++ --------------------------------------------------------------
   /**
@@ -148,7 +156,7 @@ export class RpcWorkerPool implements WorkerPool {
    * @param message_identifier - A message ID to associate with the command.
    * @returns An object representing the worker thread to use.
    */
-  getWorker(message_identifier = -1): {
+  private getWorker(message_identifier = -1): {
     worker: Worker;
     in_flight_commands: Map<number, any>;
     worker_tag: number;
@@ -187,7 +195,7 @@ export class RpcWorkerPool implements WorkerPool {
    * @param msg - The message received from the worker thread.
    * @param worker_tag - The ID of the worker thread that sent the message.
    */
-  onMessageHandler(
+  private onMessageHandler(
     msg: { result: any; error: unknown; job_ref: number },
     worker_tag: number
   ): void {
@@ -204,24 +212,14 @@ export class RpcWorkerPool implements WorkerPool {
     if (error) reject(error);
     else resolve(result);
   }
-}
 
-export interface WorkerPool {
-  exec: WorkerPoolExec;
-  getWorker(): {
-    worker: Worker;
-    in_flight_commands: Map<number, any>;
-    worker_tag: number;
-  };
-  onMessageHandler(msg: any, worker_tag: number): void;
-}
-
-export interface WorkerPoolExec {
-  <O = unknown>(
-    command_name: string,
-    message_identifier: number,
-    ...args: string[]
-  ): Promise<O>;
+  // private verbosity: boolean;
+  get verbose(): boolean {
+    return this.verbosity;
+  }
+  set verbose(VERBOSE: boolean) {
+    this.verbosity = VERBOSE;
+  }
 }
 
 export default RpcWorkerPool;
