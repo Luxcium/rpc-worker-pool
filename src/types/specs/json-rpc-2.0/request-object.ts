@@ -10,7 +10,7 @@
 /**
  * JSON-RPC 2.0 Notification object
  * ```typescript
- *    export interface RpcNotification<N extends Array<any> | Record<string, any>> {
+ *    interface RpcNotification<N extends Array<any> | Record<string, any>> {
  *      jsonrpc: '2.0';
  *      method: string;
  *      params?: N;
@@ -57,7 +57,7 @@ export interface RpcNotification<N extends Array<any> | Record<string, any>> {
 /** json-rpc
  * JSON-RPC 2.0 Request object
  * ```typescript
- *    export interface RpcRequest<P extends Array<any> | Record<string, any>> {
+ *    interface RpcRequest<P extends Array<any> | Record<string, any>> {
  *      jsonrpc: '2.0';
  *      method: string;
  *      params?: P;
@@ -77,6 +77,17 @@ export interface RpcRequest<P extends Array<any> | Record<string, any>> {
    * A String specifying the version of the JSON-RPC protocol. MUST be exactly "2.0".
    */
   jsonrpc: '2.0';
+
+  /**
+   * An identifier established by the Client that MUST contain a
+   * String or Number value if included. If it is not included,
+   * it is assumed to be a notification.
+   *
+   * The Server MUST reply with the same value in the Response object
+   * if included. This member is used to correlate the context between
+   * the two objects.
+   */
+  id: string | number;
 
   /**
    * A String containing the name of the method to be invoked. Method
@@ -100,17 +111,6 @@ export interface RpcRequest<P extends Array<any> | Record<string, any>> {
    *   match exactly, including case, the method's expected parameters.
    */
   params?: P;
-
-  /**
-   * An identifier established by the Client that MUST contain a
-   * String or Number value if included. If it is not included,
-   * it is assumed to be a notification.
-   *
-   * The Server MUST reply with the same value in the Response object
-   * if included. This member is used to correlate the context between
-   * the two objects.
-   */
-  id: string | number;
 }
 
 /*

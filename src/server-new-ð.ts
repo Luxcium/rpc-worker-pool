@@ -5,7 +5,7 @@ import { createServer as createHTTP_Server, ServerResponse } from 'node:http';
 import { createServer as createTCP_Server } from 'node:net';
 import { join } from 'node:path';
 import { isStrategy, strategies } from './commands';
-import { RpcWorkerPool } from './RpcWorkerPool';
+import { RpcWorkerPool } from './server/RpcWorkerPool';
 
 const VERBOSE = false;
 
@@ -73,7 +73,7 @@ const workerPool = new RpcWorkerPool(scriptFileUri, threads, strategy, VERBOSE);
 /**
  * The ID of the next message.
  */
-const idCounter = { messageId: 0, actorId: 0 };
+const elementCounter = { messageSeq: 0, actorTracking: 0 };
 /**
  * A collection of actor handlers.
  */
@@ -94,7 +94,7 @@ const messageMapping = new Map<number, ServerResponse>();
  */
 const HTTP_Server = createHTTP_Server((req, res): any => {
   try {
-    idCounter.messageId++;
+    elementCounter.messageSeq++;
 
     // End if there are no actors, respond with an error message
     if (actorSet.size === 0) {
@@ -107,7 +107,7 @@ const HTTP_Server = createHTTP_Server((req, res): any => {
     const actor: any = randomActor();
 
     // Store the response object with the message ID for later use
-    void messageMapping.set(idCounter.messageId, res);
+    void messageMapping.set(elementCounter.messageSeq, res);
 
     // Extract the command name, query string, and fragment identifier from the URL
     const fullUrl = new URL(req?.url || '', `http:${'//' + req.headers.host}`);
@@ -128,7 +128,7 @@ const HTTP_Server = createHTTP_Server((req, res): any => {
 
       // Send the command and arguments, along with the query string and fragment identifier, to the selected actor
       actor({
-        id: idCounter.messageId,
+        id: elementCounter.messageSeq,
         command_name,
         args,
         queryString,
@@ -244,7 +244,7 @@ actorSet.add(async (data: any) => {
     const time = Math.round(delay * 100) / 100;
 
     // Increment actor ID.
-    idCounter.actorId++;
+    elementCounter.actorTracking++;
     const dateNow = Date.now();
 
     const valueResult = {
@@ -256,9 +256,9 @@ actorSet.add(async (data: any) => {
       jsonrpc: '2.0',
       id: data.id,
       pid: process.pid,
-      actorId: idCounter.actorId,
+      actorTracking: elementCounter.actorTracking,
       performance: delay,
-      idString: `${dateNow}:${data.id}@${process.pid}:${idCounter.actorId}:${time}ms`,
+      referenceString: `${dateNow}:${data.id}@${process.pid}:${elementCounter.actorTracking}:${time}ms`,
       [`${Date.now()}`]: Date(),
     };
     const httpReply = JSON.stringify({
@@ -271,7 +271,7 @@ actorSet.add(async (data: any) => {
       'actors.add!',
       {
         actor: 'Local',
-        localId: process.pid,
+        localPid: process.pid,
         ...metaData,
       },
       'performance: ' + chalk.yellow(time) + ' ms'
@@ -409,7 +409,7 @@ function response(data: any, reply: string) {
 
 // // Send the command and arguments to the selected actor
 // actor({
-//   id: idCounter.messageId,
+//   id: elementCounter.messageSeq,
 //   command_name,
 //   args: [...splitedUrl.slice(2)],
 // });

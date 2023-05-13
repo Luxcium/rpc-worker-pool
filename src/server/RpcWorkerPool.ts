@@ -1,7 +1,8 @@
 'use strict';
 import { Worker } from 'node:worker_threads';
 import { cpus } from 'os';
-import { strategies, supportedStrategies, type Strategies } from './commands';
+import { strategies, supportedStrategies, type Strategies } from '../commands';
+import { RpcRequest } from '../types/specs';
 
 const VERBOSE = false;
 const CORES = cpus().length;
@@ -42,22 +43,22 @@ export class RpcWorkerPool implements WorkerPool {
    * It is also used to correlate the result of a command execution with the original command.
    * Each worker thread maintains a map of its in-flight commands, which is used to track
    * the progress of the commands.
-   * The in-flight commands map is keyed by the `job_id` of the command.
+   * The in-flight commands map is keyed by the `job_ref` of the command.
    * The value of the in-flight command map is the `resolve` function used to resolve the
    * promise returned by the `scheduleTask()` method.
    */
-  private next_job_id: number;
+  private next_job_ref: number;
   /**
    * An array containing objects representing the worker threads in the pool.
    * Each object contains the worker thread itself, a map of its in-flight commands, and the worker ID.
-   * The in-flight commands map is keyed by the `job_id` of the command.
+   * The in-flight commands map is keyed by the `job_ref` of the command.
    * The value of the in-flight command map is the `resolve` function used to resolve the
    * promise returned by the `scheduleTask()` method. The worker ID is an integer in the range [0, size - 1].
    */
   private workers: {
     worker: Worker;
     in_flight_commands: Map<number, any>;
-    worker_id: number;
+    worker_tag: number;
   }[];
   // The URI of the worker script file.
   // The number of worker threads to spawn.
@@ -84,9 +85,9 @@ export class RpcWorkerPool implements WorkerPool {
     this.verbosity = verbosity;
 
     this.rr_index = -1;
-    this.next_job_id = 0;
+    this.next_job_ref = 0;
     this.workers = [];
-    for (let worker_id = 0; worker_id < this.size; worker_id++) {
+    for (let worker_tag = 0; worker_tag < this.size; worker_tag++) {
       // HACK: This is a hack to work around the fact that the Worker constructor does not support
       const worker = new Worker(
         `
@@ -97,15 +98,15 @@ export class RpcWorkerPool implements WorkerPool {
           eval: true,
           workerData: {
             runThisFileInTheWorker: pathURI, // '/path/to/worker-script.ts'
-            workerId: worker_id,
+            workerAsset: worker_tag,
           },
         }
       );
 
       // const worker = new Worker(path);
-      this.workers.push({ worker, in_flight_commands: new Map(), worker_id });
+      this.workers.push({ worker, in_flight_commands: new Map(), worker_tag });
       worker.on('message', msg => {
-        this.onMessageHandler(msg, worker_id);
+        this.onMessageHandler(msg, worker_tag);
       });
     }
   }
@@ -113,47 +114,54 @@ export class RpcWorkerPool implements WorkerPool {
   /**
    * Sends a command to a worker thread for execution.
    * @param command_name - The name of the command to execute.
-   * @param message_id - A message ID to associate with the command.
+   * @param message_identifier - A message ID to associate with the command.
    * @param args - Optional arguments for the command.
    * @returns A promise that resolves to the result of the command execution.
    */
   async exec<O = unknown>(
     command_name: string,
-    message_id: number,
+    message_identifier: number,
     ...args: string[]
   ): Promise<O> {
-    const job_id = this.next_job_id++;
+    const job_ref = this.next_job_ref++;
 
-    // The message_id is provided for feedback purpose only.
-    const worker = this.getWorker(message_id);
+    // The message_identifier is provided for feedback purpose only.
+    const worker = this.getWorker(message_identifier);
 
     const promise = new Promise<O>((resolve, reject) => {
-      worker.in_flight_commands.set(job_id, { resolve, reject });
+      worker.in_flight_commands.set(job_ref, { resolve, reject });
     });
-    worker.worker.postMessage({ command_name, params: args, job_id });
+
+    const rpcRequest: RpcRequest<{}> = {
+      jsonrpc: '2.0',
+      id: Number(job_ref),
+      method: command_name,
+      params: args,
+    };
+    worker.worker.postMessage(rpcRequest);
 
     return promise;
   }
   // ++ --------------------------------------------------------------
   /**
    * Returns the worker thread to which the next command should be sent.
-   * @param message_id - A message ID to associate with the command.
+   * @param message_identifier - A message ID to associate with the command.
    * @returns An object representing the worker thread to use.
    */
-  getWorker(message_id = -1): {
+  getWorker(message_identifier = -1): {
     worker: Worker;
     in_flight_commands: Map<number, any>;
-    worker_id: number;
+    worker_tag: number;
   } {
-    let worker_id: number = 0;
+    let worker_tag: number = 0;
     switch (this.strategy) {
       case 'random':
-        worker_id = Math.floor(Math.random() * this.size);
+        worker_tag = Math.floor(Math.random() * this.size);
         break;
       case 'roundrobin':
         this.rr_index++;
         if (this.rr_index >= this.size) this.rr_index = 0;
-        worker_id = this.rr_index;
+        worker_tag = this.rr_index;
         break;
       case 'leastbusy':
       default:
@@ -162,32 +170,36 @@ export class RpcWorkerPool implements WorkerPool {
           let worker = this.workers[i];
           if (worker.in_flight_commands.size < min) {
             min = worker.in_flight_commands.size;
-            worker_id = 0;
+            worker_tag = 0;
           }
         }
     }
     this.verbosity &&
-      console.log(`Worker: ${worker_id + 1} Message id: ${message_id || 0}`);
+      console.log(
+        `Worker: ${worker_tag + 1} Message id: ${message_identifier || 0}`
+      );
 
-    return this.workers[worker_id];
+    return this.workers[worker_tag];
   }
   // ++ --------------------------------------------------------------
   /**
    * Handler for messages received from worker threads.
    * @param msg - The message received from the worker thread.
-   * @param worker_id - The ID of the worker thread that sent the message.
+   * @param worker_tag - The ID of the worker thread that sent the message.
    */
   onMessageHandler(
-    msg: { result: any; error: unknown; job_id: number },
-    worker_id: number
+    msg: { result: any; error: unknown; job_ref: number },
+    worker_tag: number
   ): void {
-    const worker = this.workers[worker_id];
+    const worker = this.workers[worker_tag];
 
-    const { result, error, job_id } = msg;
+    const { result, error, job_ref } = msg;
 
     // resolve: (value: any) => void, reject: (reason?: any) =>
-    const { resolve, reject } = worker.in_flight_commands.get(job_id as number);
-    worker.in_flight_commands.delete(job_id as number);
+    const { resolve, reject } = worker.in_flight_commands.get(
+      job_ref as number
+    );
+    worker.in_flight_commands.delete(job_ref as number);
 
     if (error) reject(error);
     else resolve(result);
@@ -199,15 +211,15 @@ export interface WorkerPool {
   getWorker(): {
     worker: Worker;
     in_flight_commands: Map<number, any>;
-    worker_id: number;
+    worker_tag: number;
   };
-  onMessageHandler(msg: any, worker_id: number): void;
+  onMessageHandler(msg: any, worker_tag: number): void;
 }
 
 export interface WorkerPoolExec {
   <O = unknown>(
     command_name: string,
-    message_id: number,
+    message_identifier: number,
     ...args: string[]
   ): Promise<O>;
 }

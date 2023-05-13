@@ -3,7 +3,7 @@
 import chalk from 'chalk';
 import { connect } from 'net';
 // import { Strategies } from './consts';
-import { RpcWorkerPool } from './RpcWorkerPool';
+import { RpcWorkerPool } from './server/RpcWorkerPool';
 
 const workerScriptFileUri = `${__dirname}/worker.js`;
 
@@ -27,7 +27,7 @@ void upstreamSocket.on('error', error => {
 });
 
 let last_data_string = '';
-let actor_id = 0;
+let actor_unit = 0;
 void upstreamSocket.on('data', raw_data => {
   // console.log('raw_data:', String(raw_data));
 
@@ -63,7 +63,7 @@ void upstreamSocket.on('data', raw_data => {
         {
           jsonrpc: '2.0',
           id: data.id,
-          pid: `actor(${++actor_id}) at process: ${process.pid}`,
+          pid: `actor(${++actor_unit}) at process: ${process.pid}`,
         },
         'performance: ' + chalk.yellow(time) + ' ms'
       );
@@ -93,7 +93,7 @@ void upstreamSocket.on('end', () => {
   console.log('  >', 'disconnect from server');
 });
 // let last_data_string = '';
-// let actor_id = 0;
+// let actor_unit = 0;
 // void upstreamSocket.on('data', raw_data => {
 //   // console.log('raw_data:', String(raw_data));
 
@@ -135,7 +135,7 @@ void upstreamSocket.on('end', () => {
 //         {
 //           jsonrpc: '2.0',
 //           id: data.id,
-//           pid: `actor(${++actor_id}) at process: ${process.pid}`,
+//           pid: `actor(${++actor_unit}) at process: ${process.pid}`,
 //         },
 //         'performance: ' + chalk.yellow(time) + ' ms'
 //       );

@@ -3,7 +3,7 @@
 
 import { parentPort } from 'node:worker_threads';
 import { INTERNAL_ERROR } from './API';
-import { commands } from './commands';
+import { methods } from './commands';
 import { MessageRPC, MsgObjectToWrap, WraperFunction } from './types';
 /**
  * The main function that runs the worker process.
@@ -16,8 +16,8 @@ import { MessageRPC, MsgObjectToWrap, WraperFunction } from './types';
  * The `MAIN()` function listens for messages on the `parentPort` and processes
  * them using the `asyncOnMessageWrap()` function. It expects messages to be in
  * the format of a `MsgObjectToWrap`, which contains a `command_name`, `params`,
- * and `job_id`. The `command_name` is used to look up a function in the `commands`
- * object, which is then called with the `job_id` and `params`. If the function
+ * and `job_ref`. The `command_name` is used to look up a function in the `commands`
+ * object, which is then called with the `job_ref` and `params`. If the function
  * call succeeds, the result is sent back to the parent thread as a message
  * containing a `MessageRPC` object. If the function call fails, an error message
  * is sent back to the parent thread as a message containing an `ErrorRPC` object.
@@ -27,25 +27,25 @@ import { MessageRPC, MsgObjectToWrap, WraperFunction } from './types';
  * @internal
  * This function is consumed by the `RpcWorkerPool` class via the path to this file.(85)
  */
-void (function MAIN(): void {
+(function MAIN(): void {
   const { workerData } = require('worker_threads');
-  const workerId = workerData.workerId;
-  console.log(`at: WORKER ${workerId} from ${__filename}`);
+  const workerAsset = workerData.workerAsset;
+  console.log(`at: WORKER ${workerAsset} from ${__filename}`);
   // console.log(`at: MAIN from ${__filename}`);
   try {
     if (!parentPort) throw new Error('parentPort is missing or is undefined');
-    void parentPort.on(
+    parentPort.on(
       'message',
       asyncOnMessageWrap(
-        async ({ command_name, params, job_id }: MsgObjectToWrap) => {
+        async ({ command_name, params, job_ref }: MsgObjectToWrap) => {
           const messageRPC: MessageRPC = {
             jsonrpc: '2.0',
-            job_id,
+            job_ref,
             pid: 'worker: ' + process.pid,
           };
 
           try {
-            const resultRPC = await commands[command_name](job_id, ...params);
+            const resultRPC = await methods[command_name](job_ref, ...params);
             return { ...messageRPC, result: resultRPC };
           } catch (error: any) {
             INTERNAL_ERROR(null, error);
@@ -63,9 +63,8 @@ void (function MAIN(): void {
       )
     );
   } catch (error) {
-    void console.error('Error communicating with parentPort:', error);
+    console.error('Error communicating with parentPort:', error);
   }
-
   return;
 })();
 /**

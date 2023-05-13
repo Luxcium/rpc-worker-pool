@@ -1,7 +1,8 @@
 import { wget } from './wget';
 
-import chalk from 'chalk';
+import { APPLICATION_ERROR } from '../API';
 import { Command } from '../types';
+import { RpcLeft, RpcRequest, RpcResponse, RpcRight } from '../types/specs';
 import { deserializeURI } from './codecs';
 import { timeoutZalgo } from './timeout-zalgo';
 
@@ -21,48 +22,67 @@ export function createCommand<P extends any[], R>(
   };
 }
 
-export const commands: { [k: string]: any } = {
-  ['hello-world'](job_id: any, ...args: any[]) {
-    // console.log
-    job_id++,
-      chalk.ansi256(209)('Hello wold will echo back:'),
-      chalk.ansi256(92)(deserializeURI(...(args as [any]))) + '\n\n';
+export type Method = <O>(rpcRequest: RpcRequest<string[]>) => Promise<O>;
+// prettier-ignore
+export type Methods<O> ={[k: string]:(rpcRequest: RpcRequest<string[]>) => Promise<RpcResponse<O>>};
 
-    return {
-      ['hello-world']: 'Hello wold just echo back!',
-      args: deserializeURI(...(args as [any])),
-    };
-  },
-  async delay(job_id: any, ...args: any[]) {
-    const result = timeoutZalgo(args, Number(args[0]) || 2000);
-    console.log('\ncomputing:', { job_id: job_id + 1, result });
-    await result;
-    console.log('done:', { job_id: job_id + 1, result }, '\n');
-    return result;
-  },
-  async delay_loop(job_id: any, ...args: any[]) {
-    let adder = 0;
-    console.log('computing: loop', { job_id: job_id + 1 });
-    do {
-      adder += 100;
-      adder += Math.round(performance.now() * 1000) % 2;
-    } while (adder < 1000000000);
-    console.log('done:', { job_id: job_id + 1, args }, '\n');
-    return args;
-    // console.log('\ncomputing: timeout 1', { job_id: job_id + 1 });
-    // const result = timeoutZalgo(args, 5000);
-    // await result;
-    // return result;
-  },
-  async wget(job_id: any, ...args: any[]) {
-    void job_id++;
-    const source = deserializeURI(args[0]);
-    const localDestination = deserializeURI(args[1]);
-    return wget(source, localDestination);
+export const methods: Methods<unknown> = {
+  async ['hello-world'](rpcRequest: RpcRequest<string[]>) {
+    try {
+      const params = (rpcRequest.params || []).map(deserializeURI);
+      console.log('Hello wold will echo back:');
+      console.dir(rpcRequest);
+      const result = {
+        ['hello-world']: 'Hello wold just echo back!',
+        args: params,
+      };
+      const rpcResponse: RpcRight<typeof result> = {
+        jsonrpc: '2.0',
+        id: rpcRequest.id,
+        result,
+      };
+      console.log('Hello wold did echo back:');
+      console.dir(rpcResponse);
+      return rpcResponse;
+    } catch (error) {
+      const rpcError: RpcLeft<typeof error> = APPLICATION_ERROR(
+        rpcRequest.id,
+        error
+      );
+      console.error(rpcError);
+      return rpcError;
+    }
   },
 };
 
 export const commands2 = {
+  async delay(job_ref: any, ...args: any[]) {
+    const result = timeoutZalgo(args, Number(args[0]) || 2000);
+    console.log('\ncomputing:', { job_ref: job_ref + 1, result });
+    await result;
+    console.log('done:', { job_ref: job_ref + 1, result }, '\n');
+    return result;
+  },
+  async delay_loop(job_ref: any, ...args: any[]) {
+    let adder = 0;
+    console.log('computing: loop', { job_ref: job_ref + 1 });
+    do {
+      adder += 100;
+      adder += Math.round(performance.now() * 1000) % 2;
+    } while (adder < 1000000000);
+    console.log('done:', { job_ref: job_ref + 1, args }, '\n');
+    return args;
+    // console.log('\ncomputing: timeout 1', { job_ref: job_ref + 1 });
+    // const result = timeoutZalgo(args, 5000);
+    // await result;
+    // return result;
+  },
+  async wget(job_ref: any, ...args: any[]) {
+    void job_ref++;
+    const source = deserializeURI(args[0]);
+    const localDestination = deserializeURI(args[1]);
+    return wget(source, localDestination);
+  },
   greet: createCommand(
     'Greet a person',
     async (name: string) => {

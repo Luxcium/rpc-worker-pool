@@ -1,4 +1,4 @@
-import { WorkerPool } from '../RpcWorkerPool';
+import { WorkerPool } from '../server/RpcWorkerPool';
 
 interface PipelineItem<IO> {
   id: number;

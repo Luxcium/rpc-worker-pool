@@ -3,7 +3,7 @@ import { existsSync } from 'node:fs';
 import { createServer as createHTTP_Server } from 'node:http';
 import { createServer as createTCP_Server } from 'node:net';
 import { isStrategy, strategies } from './commands';
-import { RpcWorkerPool } from './RpcWorkerPool';
+import { RpcWorkerPool } from './server/RpcWorkerPool';
 const [, , webConnection, actorConnection, threads_, strategy_] = process.argv;
 const [webEndpoint, webPort] = (webConnection || '').split(':');
 const [actorEndpoint, actorPort] = (actorConnection || '').split(':');
@@ -12,7 +12,7 @@ const workerScriptFileUri = `${__dirname}/worker.${
 }`;
 const threads = Number(threads_ || 0);
 const strategy = isStrategy(strategy_) ? strategy_ : strategies.roundrobin;
-const idCount = { messageId: 0, actorId: 0 };
+const idCount = { messageSeq: 0, actorTracking: 0 };
 const actors = new Set();
 const messages = new Map();
 function randomActor() {
@@ -20,14 +20,14 @@ function randomActor() {
   return pool[Math.floor(Math.random() * pool.length)];
 }
 const HTTP_Server = createHTTP_Server((req, res) => {
-  idCount.messageId++;
+  idCount.messageSeq++;
   if (actors.size === 0) return res.end('ERROR: EMPTY ACTOR POOL');
   const actor: any = randomActor();
-  messages.set(idCount.messageId, res);
+  messages.set(idCount.messageSeq, res);
   const splitedUrl = (req?.url || '').split('/');
   const command_name = splitedUrl.slice(1, 2).pop();
   actor({
-    id: idCount.messageId,
+    id: idCount.messageSeq,
     command_name,
     args: [...splitedUrl.slice(2)],
   });
@@ -86,10 +86,10 @@ actors.add(async (data: any) => {
     const timeAfter = performance.now();
     const delay = timeAfter - timeBefore;
     const time = Math.round(delay * 100) / 100;
-    idCount.actorId++;
+    idCount.actorTracking++;
     const replyObject = {
       id: data.id,
-      pid: `actor(${idCount.actorId}) at process: ${process.pid}`,
+      pid: `actor(${idCount.actorTracking}) at process: ${process.pid}`,
     };
     const reply =
       JSON.stringify({

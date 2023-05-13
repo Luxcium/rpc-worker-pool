@@ -4,11 +4,11 @@ import { existsSync } from 'node:fs';
 import { createServer as createHTTP_Server, ServerResponse } from 'node:http';
 import { join } from 'node:path';
 import { isStrategy, strategies } from '../commands';
-import RpcWorkerPool from '../RpcWorkerPool.gpt';
 import { error400, error500, error503 } from './errorHttp';
 import { getRelativePaths } from './getRelativePaths';
 import { getTcpServer } from './getTcpServer';
 import { response } from './response';
+import RpcWorkerPool from './RpcWorkerPool';
 import { serverResponse } from './serverResponse';
 
 const VERBOSE = false;
@@ -69,6 +69,40 @@ const defThreads = define(THREADS);
 const defStrategy = define(STRATEGY);
 const defScriptFileUri = define(SCRIPT_FILE_URI);
 
+const defaults_ = {
+  PORT,
+  HTTP_PORT,
+  ENDPOINT,
+  HTTP_ENDPOINT,
+  THREADS,
+  STRATEGY,
+  SCRIPT_FILE_URI,
+};
+const envs_ = {
+  httpEndpointEnv: httpEndpointEnv,
+  httpPortEnv: httpPortEnv,
+  endpointEnv: endpointEnv,
+  portEnv: portEnv,
+  threadsEnv: threadsEnv,
+  strategyEnv: strategyEnv,
+  scriptFileEnv: scriptFileEnv,
+};
+const args_ = {
+  argv0,
+  argv1,
+  httpConnParam,
+  connecParam,
+  threadsParam,
+  strategyParam,
+  scriptFileParam,
+  splits: {
+    httpEndpointParam,
+    httpPortParam,
+    endpointParam,
+    portParam,
+  },
+};
+
 // ## WILL DEFINE VALUES ―――――――――――――――――――――――――――――――――――――――――――――
 const httpEndpoint = defHttpEndPoint(httpEndpointEnv, httpEndpointParam);
 const httpPort = defHttpPort(httpPortEnv, httpPortParam);
@@ -83,16 +117,17 @@ const scriptFileUri = defScriptFileUri(scriptFileEnv, scriptFileParam);
 // ## WILL CREATE WORKER POOL INSTANCE ―――――――――――――――――――――――――――――――
 const workerPool = new RpcWorkerPool(scriptFileUri, threads, strategy, VERBOSE);
 
-const idCounter = { messageId: 0, actorId: 0 };
+const elementCounter = { messageSeq: 0, actorTracking: 0 };
 const messageMap = new Map<number, ServerResponse>();
-export const actorSet = new Set<(data: any) => any>();
-const primeActor = async (data: any) => {
+type Data = { messageSeq: number; command_name: string; args: string[] };
+export const actorSet = new Set<(data: Data) => any>();
+const primeActor = async (data: Data) => {
   try {
     // Executor of the worker from pool.
     const timeBefore = performance.now();
     const result = await workerPool.exec(
       data.command_name, // The name of the command to execute.
-      data.id, // The ID of the incoming request.
+      data.messageSeq, // The ID of the incoming request.
       ...data.args // Any additional arguments for the command.
     );
     const timeAfter = performance.now();
@@ -100,21 +135,21 @@ const primeActor = async (data: any) => {
     const time = Math.round(delay * 100) / 100;
 
     // Increment actor ID.
-    idCounter.actorId++;
+    elementCounter.actorTracking++;
     const dateNow = Date.now();
 
     const valueResult = {
       jsonrpc: '2.0',
-      id: data.id,
+      id: data.messageSeq,
       result,
     };
     const metaData = {
       jsonrpc: '2.0',
-      id: data.id,
+      id: data.messageSeq,
       pid: process.pid,
-      actorId: idCounter.actorId,
+      actorTracking: elementCounter.actorTracking,
       performance: delay,
-      idString: `${dateNow}:${data.id}@${process.pid}:${idCounter.actorId}:${time}ms`,
+      referenceString: `${dateNow}:${data.messageSeq}@${process.pid}:${elementCounter.actorTracking}:${time}ms`,
       [`${Date.now()}`]: Date(),
     };
     const httpReply = JSON.stringify({
@@ -127,7 +162,7 @@ const primeActor = async (data: any) => {
       'actors.add!',
       {
         actor: 'Local',
-        localId: process.pid,
+        localPid: process.pid,
         ...metaData,
       },
       'performance: ' + chalk.yellow(time) + ' ms'
@@ -161,10 +196,8 @@ const HTTP_Server = getHttpServer();
 
 export function getHttpServer() {
   const HTTP_Server = createHTTP_Server((req, res): any => {
+    elementCounter.messageSeq++;
     try {
-      idCounter.messageId++;
-
-      // End if there are no actors, respond with an error message
       if (actorSet.size === 0) {
         const reason = 'EMPTY ACTOR POOL';
         const description = 'No actors available to handle requests.';
@@ -172,10 +205,9 @@ export function getHttpServer() {
       }
 
       // Select a random actor to handle the request
-      const actor: any = randomActor();
-
       // Store the response object with the message ID for later use
-      void messageMap.set(idCounter.messageId, res);
+      const actor: (data: Data) => any = randomActor();
+      messageMap.set(elementCounter.messageSeq, res);
 
       // Extract the command name, query string, and fragment identifier from the URL
       const fullUrl = new URL(
@@ -199,8 +231,8 @@ export function getHttpServer() {
 
         // Send the command and arguments, along with the query string and fragment identifier, to the selected actor
         actor({
-          id: idCounter.messageId,
-          command_name,
+          messageSeq: elementCounter.messageSeq,
+          command_name: command_name || '',
           args,
           // args: { args, queryString, fragmentIdentifier },
         });
@@ -219,39 +251,6 @@ export function getHttpServer() {
             '/projects/monorepo-one/rpc-worker-pool/docker/dist/server/worker.js',
             '/projects/monorepo-one/rpc-worker-pool/docker/dist/server/server.js'
           );
-          const defaults_ = {
-            PORT,
-            HTTP_PORT,
-            ENDPOINT,
-            HTTP_ENDPOINT,
-            THREADS,
-            STRATEGY,
-            SCRIPT_FILE_URI,
-          };
-          const envs_ = {
-            httpEndpointEnv: httpEndpointEnv,
-            httpPortEnv: httpPortEnv,
-            endpointEnv: endpointEnv,
-            portEnv: portEnv,
-            threadsEnv: threadsEnv,
-            strategyEnv: strategyEnv,
-            scriptFileEnv: scriptFileEnv,
-          };
-          const args_ = {
-            argv0,
-            argv1,
-            httpConnParam,
-            connecParam,
-            threadsParam,
-            strategyParam,
-            scriptFileParam,
-            splits: {
-              httpEndpointParam,
-              httpPortParam,
-              endpointParam,
-              portParam,
-            },
-          };
           const definedValues = {
             httpEndpoint,
             httpPort,
@@ -267,7 +266,7 @@ export function getHttpServer() {
           serverResponse(res)(200, 'OK', 'string').end(
             JSON.stringify({
               jsonrpc: '2.0',
-              pid: 'server: ' + process.pid,
+              id: elementCounter.messageSeq,
               result: {
                 paths,
                 worker_path: SCRIPT_FILE_URI,
@@ -276,8 +275,8 @@ export function getHttpServer() {
                 ARGs: args_,
                 isInDocker: runInDocker,
                 definedValues,
+                pid: 'server: ' + process.pid,
               },
-              id: idCounter.messageId,
             })
           );
         } else {

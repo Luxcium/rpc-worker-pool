@@ -8,7 +8,7 @@ export {};
 // //   endpointEnv,
 // //   httpEndpointEnv,
 // //   httpPortEnv,
-// //   idCounter,
+// //   elementCounter,
 // //   messageMap,
 // //   portEnv,
 // //   randomActor,
@@ -25,7 +25,7 @@ export {};
 //   endpointEnv,
 //   httpEndpointEnv,
 //   httpPortEnv,
-//   idCounter,
+//   elementCounter,
 //   messageMap,
 //   portEnv,
 //   randomActor,
@@ -36,7 +36,7 @@ export {};
 // }: any) {
 //   const HTTP_Server = createHTTP_Server((req, res): any => {
 //     try {
-//       idCounter.messageId++;
+//       elementCounter.messageSeq++;
 
 //       // End if there are no actors, respond with an error message
 //       if (actorSet.size === 0) {
@@ -49,7 +49,7 @@ export {};
 //       const actor: any = randomActor();
 
 //       // Store the response object with the message ID for later use
-//       void messageMap.set(idCounter.messageId, res);
+//       void messageMap.set(elementCounter.messageSeq, res);
 
 //       // Extract the command name, query string, and fragment identifier from the URL
 //       const fullUrl = new URL(
@@ -73,7 +73,7 @@ export {};
 
 //         // Send the command and arguments, along with the query string and fragment identifier, to the selected actor
 //         actor({
-//           id: idCounter.messageId,
+//           id: elementCounter.messageSeq,
 //           command_name,
 //           args,
 //           // args: { args, queryString, fragmentIdentifier },
@@ -150,7 +150,7 @@ export {};
 //                 isInDocker: runInDocker,
 //                 definedValues,
 //               },
-//               id: idCounter.messageId,
+//               id: elementCounter.messageSeq,
 //             })
 //           );
 //         } else {

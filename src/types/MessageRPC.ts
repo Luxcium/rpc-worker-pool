@@ -15,7 +15,7 @@ export type MessageRPC<T = unknown> = {
   /** An error object if the JSON-RPC method call failed. */
   error?: ErrorRPC;
   /** The job ID associated with the message. */
-  job_id: string;
+  job_ref: string;
   /** The process ID of the worker thread. */
   pid: string;
 };

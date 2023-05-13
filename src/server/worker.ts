@@ -2,8 +2,10 @@
 // #!! Consumed by the RpcWorkerPool class via path the to this file.
 
 import { parentPort } from 'node:worker_threads';
-import { commands } from '../commands';
-import { MessageRPC, MsgObjectToWrap, WraperFunction } from '../types';
+import { INTERNAL_ERROR } from '../API';
+import { methods } from '../commands';
+import { WraperFunction } from '../types';
+import { RpcRequest } from '../types/specs';
 /**
  * The main function that runs the worker process.
  *
@@ -15,8 +17,8 @@ import { MessageRPC, MsgObjectToWrap, WraperFunction } from '../types';
  * The `MAIN()` function listens for messages on the `parentPort` and processes
  * them using the `asyncOnMessageWrap()` function. It expects messages to be in
  * the format of a `MsgObjectToWrap`, which contains a `command_name`, `params`,
- * and `job_id`. The `command_name` is used to look up a function in the `commands`
- * object, which is then called with the `job_id` and `params`. If the function
+ * and `job_ref`. The `command_name` is used to look up a function in the `commands`
+ * object, which is then called with the `job_ref` and `params`. If the function
  * call succeeds, the result is sent back to the parent thread as a message
  * containing a `MessageRPC` object. If the function call fails, an error message
  * is sent back to the parent thread as a message containing an `ErrorRPC` object.
@@ -26,42 +28,31 @@ import { MessageRPC, MsgObjectToWrap, WraperFunction } from '../types';
  * @internal
  * This function is consumed by the `RpcWorkerPool` class via the path to this file.(85)
  */
-void (function MAIN(): void {
+
+// RpcRequest
+(function MAIN(): void {
   const { workerData } = require('worker_threads');
-  const workerId = workerData.workerId;
-  console.log(`at: WORKER ${workerId} from ${__filename}`);
+  const workerAsset = workerData.workerAsset;
+  console.log(`at: WORKER ${workerAsset} from ${__filename}`);
   // console.log(`at: MAIN from ${__filename}`);
   try {
     if (!parentPort) throw new Error('parentPort is missing or is undefined');
-    void parentPort.on(
+    parentPort.on(
       'message',
-      asyncOnMessageWrap(
-        async ({ command_name, params, job_id }: MsgObjectToWrap) => {
-          const messageRPC: MessageRPC = {
-            jsonrpc: '2.0',
-            job_id,
-            pid: 'worker: ' + process.pid,
-          };
-
-          try {
-            const resultRPC = await commands[command_name](job_id, ...params);
-            return { ...messageRPC, result: resultRPC };
-          } catch (error: any) {
-            const errorRPC = {
-              code: -32_603,
-              message:
-                'Internal error!!! (Internal JSON-RPC error). ' +
-                (error.message || ''),
-              error,
-            };
-            console.error(String({ ...messageRPC, error: errorRPC }));
-            return { ...messageRPC, error: errorRPC };
-          }
+      asyncOnMessageWrap(async (rpcRequest: RpcRequest<string[]>) => {
+        const { method } = rpcRequest;
+        try {
+          const resultRPC = await methods[method](rpcRequest);
+          return resultRPC;
+        } catch (error) {
+          const errorRPC = INTERNAL_ERROR(rpcRequest.id, error);
+          console.error(errorRPC);
+          return errorRPC;
         }
-      )
+      })
     );
   } catch (error) {
-    void console.error('Error communicating with parentPort:', error);
+    console.error('Error communicating with parentPort:', error);
   }
 
   return;
@@ -91,10 +82,12 @@ void (function MAIN(): void {
  * ```
  */
 function asyncOnMessageWrap(fn: WraperFunction) {
-  return async function (msg: MsgObjectToWrap) {
+  return async function <P extends Array<string> = string[]>(
+    msg: RpcRequest<P>
+  ) {
     try {
       if (!parentPort) throw new Error('parentPort is undefined');
-      void parentPort.postMessage(await fn(msg));
+      void parentPort.postMessage(await fn<P>(msg));
     } catch (error) {
       void console.error(
         'Worker failed to reply (postMessage) to parentPort:',
@@ -123,11 +116,11 @@ function asyncOnMessageWrap(fn: WraperFunction) {
 // // Use the CommandMap type to make the commands object strongly typed
 // export const commands_2: {
 //   [K in keyof CommandMap]: (
-//     job_id: number,
+//     job_ref: number,
 //     params: CommandMap[K]['params']
 //   ) => Promise<CommandMap[K]['result']>;
 // } = {
-//   command1: async (job_id, params) => {
+//   command1: async (job_ref, params) => {
 //     // Implement command1 here...
 //   },
 //   // Add additional commands here...

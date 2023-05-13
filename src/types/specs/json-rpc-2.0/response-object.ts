@@ -11,7 +11,7 @@
  * Represents a successful response with a result field indicating the result
  * of the RPC call.
  * ```typescript
- *    export interface RpcRight<R> {
+ *    interface RpcRight<R> {
  *      jsonrpc: '2.0';
  *      result: R;
  *      id: string | number;
@@ -42,14 +42,6 @@ export interface RpcRight<R> {
    * exactly "2.0".
    */
   jsonrpc: '2.0';
-
-  /**
-   * This member is REQUIRED on success. This member MUST NOT exist if
-   * there was an error invoking the method. The value of this member
-   * is determined by the method invoked on the Server.
-   */
-  result: R;
-
   /**
    * An identifier established by the Client that MUST contain a
    * String, Number, or NULL value if included. If it is not included,
@@ -60,6 +52,13 @@ export interface RpcRight<R> {
    * between the two objects.
    */
   id: string | number;
+
+  /**
+   * This member is REQUIRED on success. This member MUST NOT exist if
+   * there was an error invoking the method. The value of this member
+   * is determined by the method invoked on the Server.
+   */
+  result: R;
 }
 
 /**
@@ -67,7 +66,7 @@ export interface RpcRight<R> {
  * about the encountered error.
  *
  * ```typescript
- *    export interface RpcLeft {
+ *    interface RpcLeft<E=any> {
  *      jsonrpc: '2.0';
  *      error: RpcResponseError;
  *      id: string | number | null;
@@ -92,19 +91,12 @@ export interface RpcRight<R> {
  * @see {@link https://www.jsonrpc.org/specification}
  *
  */
-export interface RpcLeft {
+export interface RpcLeft<E = any> {
   /**
    * A String specifying the version of the JSON-RPC protocol. MUST be
    * exactly "2.0".
    */
   jsonrpc: '2.0';
-
-  /**
-   * This member is REQUIRED on error. This member MUST NOT exist if
-   * there was no error triggered during invocation. The value for
-   * this member MUST be an Object as defined in section 5.1.
-   */
-  error: RpcResponseError;
 
   /**
    * An identifier established by the Client that MUST contain a
@@ -116,13 +108,20 @@ export interface RpcLeft {
    * between the two objects.
    */
   id: string | number | null;
+
+  /**
+   * This member is REQUIRED on error. This member MUST NOT exist if
+   * there was no error triggered during invocation. The value for
+   * this member MUST be an Object as defined in section 5.1.
+   */
+  error: RpcResponseError<E>;
 }
 
 /**
  * Represents the error object that contains information about an RPC error.
  *
  * ```typescript
- *    export interface RpcResponseError {
+ *    interface RpcResponseError<E = any> {
  *      code: number;
  *      message: string;
  *      data?: any;
@@ -142,7 +141,7 @@ export interface RpcLeft {
  * @see {@link https://www.jsonrpc.org/specification}
  *
  */
-export interface RpcResponseError {
+export interface RpcResponseError<E = any> {
   /**
    * A Number that indicates the error type that occurred. This MUST
    * be an integer.
@@ -160,14 +159,14 @@ export interface RpcResponseError {
    * about the error. This may be omitted. The value of this member is
    * defined by the Server (e.g. detailed error information, nested errors, etc.).
    */
-  data?: any;
+  data?: E;
 }
 
 /**
  * Represents a response in JSON-RPC format. Either the result member or
  * error member MUST be included, but both members MUST NOT be included.
  * ```typescript
- *    export type RpcResponse<T> = RpcRight<T> | RpcLeft;
+ *    type RpcResponse<R, E = any> = RpcLeft<E> | RpcRight<R>;
  * ```
  * @remarks
  * The Response is expressed as a single JSON Object, with the following members:
@@ -190,7 +189,7 @@ export interface RpcResponseError {
  * @see {@link https://www.jsonrpc.org/specification}
  *
  */
-export type RpcResponse<T> = RpcRight<T> | RpcLeft;
+export type RpcResponse<R, E = any> = RpcLeft<E> | RpcRight<R>;
 
 /*
   The MIT License

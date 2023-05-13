@@ -6,7 +6,7 @@ export type MsgObjectToWrap = {
   /** The name of the command to execute. */
   command_name: string;
   /** The parameters to pass to the command. */
-  params: string;
+  params: string[];
   /** The job ID associated with the message. */
-  job_id: string;
+  job_ref: string;
 };

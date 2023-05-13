@@ -5,7 +5,7 @@ import chalk from 'chalk';
 import { existsSync } from 'node:fs';
 import { connect } from 'node:net';
 import { join } from 'node:path';
-import { RpcWorkerPool } from './RpcWorkerPool';
+import { RpcWorkerPool } from './server/RpcWorkerPool';
 
 // ## DEFAULTS VALUE ―――――――――――――――――――――――――――――――――――――――――――――――――
 const VERBOSE = true;
@@ -83,7 +83,7 @@ void upstreamSocket.on('error', error => {
 
 // ## LISTEN FOR DATA ――――――――――――――――――――――――――――――――――――――――――――――――
 let last_data_string = '';
-let actor_id = 0;
+let actor_unit = 0;
 void upstreamSocket.on('data', raw_data => {
   // console.log('raw_data:', String(raw_data));
 
@@ -114,7 +114,7 @@ void upstreamSocket.on('data', raw_data => {
         {
           jsonrpc: '2.0',
           id: data.id,
-          pid: `actor(${++actor_id}) at process: ${process.pid}`,
+          pid: `actor(${++actor_unit}) at process: ${process.pid}`,
         },
         'performance: ' + chalk.yellow(time) + ' ms'
       );
@@ -122,7 +122,7 @@ void upstreamSocket.on('data', raw_data => {
         jsonrpc: '2.0',
         id: data.id,
         result,
-        pid: `actor(${actor_id}) at process: ${process.pid}`,
+        pid: `actor(${actor_unit}) at process: ${process.pid}`,
         performance: delay,
       };
 

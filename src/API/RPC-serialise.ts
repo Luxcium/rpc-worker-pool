@@ -15,7 +15,7 @@ import {
   RpcRight,
 } from '../types/specs';
 
-const PARSE_ERROR = (id: number | null, data: any) => ({
+const PARSE_ERROR = (id: string | number | null, data: any) => ({
   jsonrpc: '2.0' as const,
   error: {
     code: -32700 as const,
@@ -32,7 +32,7 @@ const PARSE_ERROR = (id: number | null, data: any) => ({
  * @param id
  * @param data
  */
-const INVALID_REQUEST = (id: number | null, data: any) => ({
+const INVALID_REQUEST = (id: string | number | null, data: any) => ({
   jsonrpc: '2.0' as const,
   error: {
     code: -32600 as const,
@@ -49,7 +49,7 @@ const INVALID_REQUEST = (id: number | null, data: any) => ({
  * @param id
  * @param data
  */
-const METHOD_NOT_FOUND = (id: number | null, data: any) => ({
+const METHOD_NOT_FOUND = (id: string | number | null, data: any) => ({
   jsonrpc: '2.0' as const,
   error: {
     code: -32601 as const,
@@ -65,7 +65,7 @@ const METHOD_NOT_FOUND = (id: number | null, data: any) => ({
  * @param id
  * @param data
  */
-const INVALID_PARAMS = (id: number | null, data: any) => ({
+const INVALID_PARAMS = (id: string | number | null, data: any) => ({
   jsonrpc: '2.0' as const,
   error: {
     code: -32602 as const,
@@ -94,7 +94,7 @@ const INVALID_PARAMS = (id: number | null, data: any) => ({
  * @param id
  * @param data
  */
-const INTERNAL_ERROR = (id: number | null, data: any) => ({
+const INTERNAL_ERROR = <E>(id: string | number | null, data: E) => ({
   jsonrpc: '2.0' as const,
   error: {
     code: -32603 as const,
@@ -111,7 +111,7 @@ const INTERNAL_ERROR = (id: number | null, data: any) => ({
  * @param message
  */
 const SERVER_ERROR = (
-  id: number | null,
+  id: string | number | null,
   data: any,
   code: number = 0,
   message: string = ''

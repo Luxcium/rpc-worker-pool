@@ -3,8 +3,8 @@ import chalk from 'chalk';
 import { existsSync } from 'node:fs';
 import { createServer as createHTTP_Server } from 'node:http';
 import { createServer as createTCP_Server } from 'node:net';
-import { RpcWorkerPool } from './RpcWorkerPool';
 import { isStrategy, strategies } from './commands';
+import { RpcWorkerPool } from './server/RpcWorkerPool';
 
 // ++ Initial Setup --------------------------------------------------
 /**
@@ -35,7 +35,7 @@ const workerPool = new RpcWorkerPool(
 /**
  * The ID of the next message.
  */
-const idCount = { messageId: 0, actorId: 0 };
+const idCount = { messageSeq: 0, actorTracking: 0 };
 /**
  * A collection of actor handlers.
  */
@@ -63,7 +63,7 @@ function randomActor() {
  * client.
  */
 const HTTP_Server = createHTTP_Server((req, res): any => {
-  idCount.messageId++;
+  idCount.messageSeq++;
   // If there are no actors, respond with an error message
   if (actors.size === 0) return res.end('ERROR: EMPTY ACTOR POOL');
 
@@ -71,7 +71,7 @@ const HTTP_Server = createHTTP_Server((req, res): any => {
   const actor: any = randomActor();
 
   // Store the response object with the message ID for later use
-  void messages.set(idCount.messageId, res);
+  void messages.set(idCount.messageSeq, res);
 
   // Extract the command name and arguments from the URL
   const splitedUrl = (req?.url || '').split('/');
@@ -79,7 +79,7 @@ const HTTP_Server = createHTTP_Server((req, res): any => {
 
   // Send the command and arguments to the selected actor
   void actor({
-    id: idCount.messageId,
+    id: idCount.messageSeq,
     command_name,
     args: [...splitedUrl.slice(2)],
   });
@@ -168,12 +168,12 @@ void actors.add(async (data: any) => {
     const time = Math.round(delay * 100) / 100;
 
     // Increment actor ID.
-    idCount.actorId++;
+    idCount.actorTracking++;
 
     // Build reply object.
     const replyObject = {
       id: data.id,
-      pid: `actor(${idCount.actorId}) at process: ${process.pid}`,
+      pid: `actor(${idCount.actorTracking}) at process: ${process.pid}`,
     };
 
     // Build reply string.
