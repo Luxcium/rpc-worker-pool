@@ -59,6 +59,7 @@ export interface RpcRight<R> {
    * is determined by the method invoked on the Server.
    */
   result: R;
+  error?: undefined | null;
 }
 
 /**
@@ -115,6 +116,7 @@ export interface RpcLeft<E = any> {
    * this member MUST be an Object as defined in section 5.1.
    */
   error: RpcResponseError<E>;
+  result?: undefined | null;
 }
 
 /**

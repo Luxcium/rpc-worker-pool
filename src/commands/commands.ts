@@ -2,6 +2,7 @@ import { wget } from './wget';
 
 import { APPLICATION_ERROR } from '../API';
 import { Command } from '../types';
+import { IdsObject } from '../types/IdsObject';
 import { RpcLeft, RpcRequest, RpcResponse, RpcRight } from '../types/specs';
 import { deserializeURI } from './codecs';
 import { timeoutZalgo } from './timeout-zalgo';
@@ -24,25 +25,71 @@ export function createCommand<P extends any[], R>(
 
 export type Method = <O>(rpcRequest: RpcRequest<string[]>) => Promise<O>;
 // prettier-ignore
-export type Methods<O> ={[k: string]:(rpcRequest: RpcRequest<string[]>) => Promise<RpcResponse<O>>};
+export type Methods<O> ={[k: string]:(rpcRequest: RpcRequest<[IdsObject,...string[]]>) => Promise<RpcResponse<O>>};
+function isString(value: string | IdsObject): value is string {
+  return typeof value === 'string';
+}
+
+function getStrArgs(rpcRequest: any) {
+  const list: string[] = Array.isArray(rpcRequest.params)
+    ? rpcRequest.params
+    : [];
+  const args = list.filter(isString).map(deserializeURI);
+  return [...args];
+}
+
+function getIDsObject(rpcRequest: any) {
+  let idsObject: IdsObject;
+
+  const firstElement = rpcRequest?.params ? rpcRequest.params[0] : undefined;
+
+  if (
+    firstElement &&
+    typeof firstElement === 'object' &&
+    firstElement !== null
+  ) {
+    idsObject = {
+      external_message_identifier:
+        Number(firstElement.external_message_identifier) ?? NaN,
+      employee_number: Number(firstElement.employee_number) ?? NaN,
+      internal_job_ref: Number(firstElement.internal_job_ref) ?? NaN,
+    };
+  } else {
+    idsObject = {
+      external_message_identifier: NaN,
+      employee_number: NaN,
+      internal_job_ref: NaN,
+    };
+  }
+
+  return idsObject;
+}
+
+function getParams(rpcRequest: any): [IdsObject, string[]] {
+  return [getIDsObject(rpcRequest), [...getStrArgs(rpcRequest)]];
+}
 
 export const methods: Methods<unknown> = {
-  async ['hello-world'](rpcRequest: RpcRequest<string[]>) {
+  async ['hello-world'](rpcRequest: RpcRequest<[IdsObject, ...string[]]>) {
     try {
-      const params = (rpcRequest.params || []).map(deserializeURI);
-      console.log('Hello wold will echo back:');
-      console.dir(rpcRequest);
+      const [idsObject, args] = getParams(rpcRequest);
+
+      console.log('Hello world will echo back request as recieved:');
+      console.dir(rpcRequest, { colors: true });
       const result = {
         ['hello-world']: 'Hello wold just echo back!',
-        args: params,
+        args,
       };
       const rpcResponse: RpcRight<typeof result> = {
         jsonrpc: '2.0',
-        id: rpcRequest.id,
+        id: Number(rpcRequest.id),
         result,
       };
-      console.log('Hello wold did echo back:');
-      console.dir(rpcResponse);
+      console.log('Hello world did echo back request as pre processed:');
+
+      const { external_message_identifier: id } = idsObject;
+
+      console.dir({ ...rpcResponse, id }, { colors: true });
       return rpcResponse;
     } catch (error) {
       const rpcError: RpcLeft<typeof error> = APPLICATION_ERROR(

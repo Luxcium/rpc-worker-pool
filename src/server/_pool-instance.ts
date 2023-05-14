@@ -1,8 +1,7 @@
 import { existsSync } from 'fs';
 import { join } from 'path';
-import { isStrategy, strategies } from '../commands';
-import { WorkerPool } from '../types';
 import RpcWorkerPool from './RpcWorkerPool';
+import { isStrategy, strategies } from './utils';
 
 const THREADS = 4;
 const STRATEGY = 'roundrobin';
@@ -16,11 +15,7 @@ const strategy_ = String(STRATEGY);
 const strategy = isStrategy(strategy_) ? strategy_ : strategies.roundrobin;
 const scriptFileUri = SCRIPT_FILE_URI;
 
-const workerPool: WorkerPool = new RpcWorkerPool(
-  scriptFileUri,
-  threads,
-  strategy
-);
+const workerPool = new RpcWorkerPool(scriptFileUri, threads, strategy);
 
 void (async function MAIN() {
   console.log(`at: MAIN from ${__filename}`);
@@ -28,9 +23,14 @@ void (async function MAIN() {
   rpcDummyData;
   workerPool;
   const result = await workerPool.exec(
-    'command_name',
-    0 as number,
+    'hello-world',
+    9,
     ...['...args', 'string[]']
   );
+  await workerPool.exec('hello-world', 10, ...['...args', 'string[]']);
+  await workerPool.exec('hello-world', 11, ...['...args', 'string[]']);
+  await workerPool.exec('hello-world', 12, ...['...args', 'string[]']);
+  await workerPool.exec('hello-world', 13, ...['...args', 'string[]']);
+  await workerPool.exec('hello-world', 14, ...['...args', 'string[]']);
   return void result;
 })();

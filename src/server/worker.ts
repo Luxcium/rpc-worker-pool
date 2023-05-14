@@ -4,7 +4,8 @@
 import { parentPort } from 'node:worker_threads';
 import { INTERNAL_ERROR } from '../API';
 import { methods } from '../commands';
-import { RpcRequest } from '../types/specs';
+import { IdsObject } from '../types';
+import { RpcRequest, RpcResponse } from '../types/specs';
 /**
  * The main function that runs the worker process.
  * This function is intended to be run as an IIFE in a worker thread, and is not
@@ -22,7 +23,32 @@ import { RpcRequest } from '../types/specs';
  * @internal
  * @returns void
  */
-function MAIN(): void {
+// function MAIN() {
+//   const { workerData } = require('worker_threads');
+//   const workerAsset = workerData.workerAsset;
+//   console.log(`at: WORKER ${workerAsset} from ${__filename}`);
+//   try {
+//     if (!parentPort) throw new Error('parentPort is missing or is undefined');
+//     parentPort.on(
+//       'message',
+//       asyncOnMessageWrap(async rpcRequest => {
+//         const { method } = rpcRequest;
+//         try {
+//           const resultRPC = await methods[method](rpcRequest);
+//           return resultRPC;
+//         } catch (error) {
+//           const errorRPC = INTERNAL_ERROR(rpcRequest.id, error);
+//           console.error(errorRPC);
+//           return errorRPC;
+//         }
+//       })
+//     );
+//   } catch (error) {
+//     console.error('Error communicating with parentPort:', error);
+//   }
+// }
+// MAIN;
+(function MAIN(): void {
   const { workerData } = require('worker_threads');
   const workerAsset = workerData.workerAsset;
   console.log(`at: WORKER ${workerAsset} from ${__filename}`);
@@ -31,26 +57,26 @@ function MAIN(): void {
     if (!parentPort) throw new Error('parentPort is missing or is undefined');
     parentPort.on(
       'message',
-      asyncOnMessageWrap(async (rpcRequest: RpcRequest<string[]>) => {
-        const { method } = rpcRequest;
-        try {
-          const resultRPC = await methods[method](rpcRequest);
-          return resultRPC;
-        } catch (error) {
-          const errorRPC = INTERNAL_ERROR(rpcRequest.id, error);
-          console.error(errorRPC);
-          return errorRPC;
+      asyncOnMessageWrap(
+        async (rpcRequest: RpcRequest<[IdsObject, ...string[]]>) => {
+          const { method } = rpcRequest;
+          try {
+            const resultRPC = await methods[method](rpcRequest);
+            return resultRPC;
+          } catch (error) {
+            const errorRPC = INTERNAL_ERROR(rpcRequest.id, error);
+            console.error(errorRPC);
+            return errorRPC;
+          }
         }
-      })
+      )
     );
   } catch (error) {
     console.error('Error communicating with parentPort:', error);
   }
 
   return;
-}
-MAIN();
-
+})();
 /**
  * Wraps a function with asynchronous message handling for worker
  * threads.
@@ -84,10 +110,12 @@ MAIN();
  * worker.on('message', handleMessage);
  * ```
  */
-function asyncOnMessageWrap<P extends Array<string> = string[]>(
-  fn: (msg: RpcRequest<P>) => Promise<any>
+function asyncOnMessageWrap(
+  fn: (
+    msg: RpcRequest<[IdsObject, ...string[]]>
+  ) => Promise<RpcResponse<unknown>>
 ) {
-  return async function (msg: RpcRequest<P>) {
+  return async function (msg: RpcRequest<[IdsObject, ...string[]]>) {
     try {
       if (!parentPort) throw new Error('parentPort is undefined');
       void parentPort.postMessage(await fn(msg));

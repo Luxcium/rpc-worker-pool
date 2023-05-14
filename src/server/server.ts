@@ -3,13 +3,13 @@ import chalk from 'chalk';
 import { existsSync } from 'node:fs';
 import { createServer as createHTTP_Server, ServerResponse } from 'node:http';
 import { join } from 'node:path';
-import { isStrategy, strategies } from '../commands';
 import { error400, error500, error503 } from './errorHttp';
 import { getRelativePaths } from './getRelativePaths';
 import { getTcpServer } from './getTcpServer';
 import { response } from './response';
 import RpcWorkerPool from './RpcWorkerPool';
 import { serverResponse } from './serverResponse';
+import { isStrategy, strategies } from './utils';
 
 const VERBOSE = false;
 
