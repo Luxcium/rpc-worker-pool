@@ -1,11 +1,53 @@
 import { wget } from './wget';
 
+import chalk from 'chalk';
 import { APPLICATION_ERROR } from '../API';
 import { Command } from '../types';
 import { IdsObject } from '../types/IdsObject';
 import { RpcLeft, RpcRequest, RpcResponse, RpcRight } from '../types/specs';
 import { deserializeURI } from './codecs';
 import { timeoutZalgo } from './timeout-zalgo';
+
+export const methods: Methods<unknown> = {
+  async ['hello-world'](rpcRequest: RpcRequest<[IdsObject, ...string[]]>) {
+    try {
+      const [idsObject, args] = getParams(rpcRequest);
+
+      console.log(
+        chalk.redBright('Hello world will echo back request as recieved:')
+      );
+      console.dir(rpcRequest, { colors: true });
+      const result = {
+        ['hello-world']: 'Hello wold just echo back!',
+        args,
+      };
+      const rpcResponse: RpcRight<typeof result> = {
+        jsonrpc: '2.0',
+        id: Number(rpcRequest.id),
+        result,
+      };
+      console.log(
+        chalk.greenBright('Hello world did echo back request as pre processed:')
+      );
+
+      const { external_message_identifier: id } = idsObject;
+
+      console.dir({ ...rpcResponse, id }, { colors: true });
+      return rpcResponse;
+    } catch (error) {
+      const rpcError: RpcLeft<typeof error> = APPLICATION_ERROR(
+        rpcRequest.id,
+        error
+      );
+      console.error(rpcError);
+      return rpcError;
+    }
+  },
+};
+
+export type Method = <O>(rpcRequest: RpcRequest<string[]>) => Promise<O>;
+// prettier-ignore
+export type Methods<O> ={[k: string]:(rpcRequest: RpcRequest<[IdsObject,...string[]]>) => Promise<RpcResponse<O>>};
 
 export function createCommand<P extends any[], R>(
   description: string,
@@ -23,9 +65,6 @@ export function createCommand<P extends any[], R>(
   };
 }
 
-export type Method = <O>(rpcRequest: RpcRequest<string[]>) => Promise<O>;
-// prettier-ignore
-export type Methods<O> ={[k: string]:(rpcRequest: RpcRequest<[IdsObject,...string[]]>) => Promise<RpcResponse<O>>};
 function isString(value: string | IdsObject): value is string {
   return typeof value === 'string';
 }
@@ -69,40 +108,8 @@ function getParams(rpcRequest: any): [IdsObject, string[]] {
   return [getIDsObject(rpcRequest), [...getStrArgs(rpcRequest)]];
 }
 
-export const methods: Methods<unknown> = {
-  async ['hello-world'](rpcRequest: RpcRequest<[IdsObject, ...string[]]>) {
-    try {
-      const [idsObject, args] = getParams(rpcRequest);
-
-      console.log('Hello world will echo back request as recieved:');
-      console.dir(rpcRequest, { colors: true });
-      const result = {
-        ['hello-world']: 'Hello wold just echo back!',
-        args,
-      };
-      const rpcResponse: RpcRight<typeof result> = {
-        jsonrpc: '2.0',
-        id: Number(rpcRequest.id),
-        result,
-      };
-      console.log('Hello world did echo back request as pre processed:');
-
-      const { external_message_identifier: id } = idsObject;
-
-      console.dir({ ...rpcResponse, id }, { colors: true });
-      return rpcResponse;
-    } catch (error) {
-      const rpcError: RpcLeft<typeof error> = APPLICATION_ERROR(
-        rpcRequest.id,
-        error
-      );
-      console.error(rpcError);
-      return rpcError;
-    }
-  },
-};
-
-export const commands2 = {
+/** @deprecated */
+export const old_commands = {
   async delay(job_ref: any, ...args: any[]) {
     const result = timeoutZalgo(args, Number(args[0]) || 2000);
     console.log('\ncomputing:', { job_ref: job_ref + 1, result });
