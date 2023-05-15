@@ -4,6 +4,7 @@
 import { parentPort } from 'node:worker_threads';
 import { INTERNAL_ERROR } from '../API';
 import { methods } from '../commands';
+import { getParams } from '../commands/commands';
 import { IdsObject } from '../types';
 import { RpcRequest, RpcResponse } from '../types/specs';
 /**
@@ -118,7 +119,10 @@ function asyncOnMessageWrap(
   return async function (msg: RpcRequest<[IdsObject, ...string[]]>) {
     try {
       if (!parentPort) throw new Error('parentPort is undefined');
-      void parentPort.postMessage(await fn(msg));
+      const [at_asyncOnMessageWrap] = getParams(msg);
+      console.dir({ at_asyncOnMessageWrap });
+      const result: RpcResponse<unknown> = await fn(msg);
+      void parentPort.postMessage(result);
     } catch (error) {
       void console.error(
         'Worker failed to reply (postMessage) to parentPort:',

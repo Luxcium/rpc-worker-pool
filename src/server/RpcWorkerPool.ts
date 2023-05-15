@@ -1,6 +1,7 @@
 'use strict';
 import { Worker } from 'node:worker_threads';
 import { cpus } from 'os';
+import { baseRpcResponseRight } from '../API/RPC-serialise';
 import { RpcRequest, RpcResponse, WorkerPool, WorkerPoolRpc } from '../types';
 import { strategies, supportedStrategies, type Strategies } from './utils';
 
@@ -230,7 +231,7 @@ export class RpcWorkerPool implements WorkerPool, WorkerPoolRpc {
     worker.in_flight_commands.delete(internal_job_ref as number);
 
     if (error) reject(error);
-    else resolve(result);
+    else resolve(baseRpcResponseRight(result)(NaN));
   }
 
   // private verbosity: boolean;
