@@ -1,8 +1,10 @@
-import { wget } from './wget';
+import { wget } from '../../src/commands/wget';
 
 import { delay } from '@luxcium/tools';
 import chalk from 'chalk';
-import { APPLICATION_ERROR } from '../API';
+import { APPLICATION_ERROR } from '../../src/API';
+import { deserializeURI } from '../../src/commands/codecs';
+import { timeoutZalgo } from '../../src/commands/timeout-zalgo';
 import type {
   Command,
   IdsObject,
@@ -10,9 +12,7 @@ import type {
   RpcRequest,
   RpcResponse,
   RpcRight,
-} from '../types';
-import { deserializeURI } from './codecs';
-import { timeoutZalgo } from './timeout-zalgo';
+} from '../../src/types';
 
 function heavyTask(n: number) {
   let result = 0;

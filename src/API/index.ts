@@ -1,5 +1,6 @@
-import { RPC_ERRORS_FNS } from './RPC-serialise';
+import { RPC_ERRORS_FNS } from './RPC-errors';
 
+export { swapRpcId } from './RPC-serialise';
 export { RPC_ERRORS_FNS };
 export const {
   PARSE_ERROR,

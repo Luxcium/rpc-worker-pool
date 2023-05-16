@@ -9,30 +9,30 @@ import {
 } from '../types/specs';
 
 export function baseRpcResponseRight<R>(result: R) {
-  return (id: number | string): RpcRight<R> => ({
+  return (responseId: number | string): RpcRight<R> => ({
     jsonrpc: '2.0' as const,
     result,
-    id,
+    id: responseId,
   });
 }
 
 export function unwrapRpcResponseRight<R = unknown>(
-  rpcResponseRight: RpcRight<R>
-) {
-  const { result, id, jsonrpc } = rpcResponseRight;
-  return [
-    result,
-    id,
-    jsonrpc === '2.0',
-    rpcResponseRight,
-  ] as UnwrapedRpcRight<R>;
-}
-type UnwrapedRpcRight<R> = [
+  response: RpcRight<R>
+): [
   result: R,
   id: string | number | null,
   jsonrpc: boolean,
   rpcResponseRight: RpcRight<R>
-];
+] {
+  const { result, id, jsonrpc } = response;
+  return [result, id, jsonrpc === '2.0', response];
+}
+// type UnwrapedRpcRight<R> = [
+//   result: R,
+//   id: string | number | null,
+//   jsonrpc: boolean,
+//   rpcResponseRight: RpcRight<R>
+// ];
 export function baseRpcResponseLeft(error: RpcResponseError) {
   return (id: number | null): RpcLeft => ({
     jsonrpc: '2.0' as const,
@@ -42,24 +42,24 @@ export function baseRpcResponseLeft(error: RpcResponseError) {
 }
 
 export function unwrapRpcResponseLeft<E = unknown>(
-  rpcResponseLeft: RpcLeft<E>
-) {
-  const { error, id, jsonrpc } = rpcResponseLeft;
-  return [
-    error,
-    unwrapRpcError(error),
-    id,
-    jsonrpc === '2.0',
-    rpcResponseLeft,
-  ] as UnwrapedRpcLeft<E>;
-}
-type UnwrapedRpcLeft<E> = [
+  response: RpcLeft<E>
+): [
   error: RpcResponseError<E>,
   unwrapedRpcError: UnwrapedRpcError<E>,
   id: string | number | null,
   jsonrpc: boolean,
   rpcResponseLeft: RpcLeft<E>
-];
+] {
+  const { error, id, jsonrpc } = response;
+  return [error, unwrapRpcError(error), id, jsonrpc === '2.0', response];
+}
+//   type UnwrapedRpcLeft<E> = [
+//   error: RpcResponseError<E>,
+//   unwrapedRpcError: UnwrapedRpcError<E>,
+//   id: string | number | null,
+//   jsonrpc: boolean,
+//   rpcResponseLeft: RpcLeft<E>
+// ];
 export function baseRpcResponseError(code: number, message: string) {
   return (data?: any): ((id: number | null) => RpcLeft) => {
     const responseError: RpcResponseError = {
@@ -73,9 +73,9 @@ export function baseRpcResponseError(code: number, message: string) {
 
 export function unwrapRpcError<E = unknown>(
   rpcResponseError: RpcResponseError<E>
-) {
+): UnwrapedRpcError<E> {
   const { code, message, data } = rpcResponseError;
-  return [data, code, message, rpcResponseError] as UnwrapedRpcError<E>;
+  return [data, code, message, rpcResponseError];
 }
 type UnwrapedRpcError<E> = [
   data: E | undefined,
@@ -135,15 +135,17 @@ export function baseRpcNotification<N extends Array<any> | Record<string, any>>(
 
 export function unwrapRpcNotification<
   N extends any[] | Record<string, any> = any
->(rpcNotification: RpcNotification<N>) {
-  const { params, method, jsonrpc } = rpcNotification;
-  return [
-    params,
-    method,
-    null,
-    jsonrpc === '2.0',
-    rpcNotification,
-  ] as UnwrapedRpcNotification<N>;
+>(
+  rpcNotification: RpcNotification<N>
+): [
+  method: string,
+  params: any,
+  id: null,
+  jsonrpc: boolean,
+  rpcNotification: RpcNotification<N>
+] {
+  const { method, params, jsonrpc } = rpcNotification;
+  return [method, params, null, jsonrpc === '2.0', rpcNotification];
 }
 type UnwrapedRpcNotification<N extends any[] | Record<string, any> = any> = [
   params: any,
@@ -152,34 +154,61 @@ type UnwrapedRpcNotification<N extends any[] | Record<string, any> = any> = [
   jsonrpc: boolean,
   rpcNotification: RpcNotification<N>
 ];
+export type { UnwrapedRpcNotification };
+/**
+ * Returns a function that creates a JSON-RPC 2.0 request object with
+ * a method and optional parameters
+ * @param method - The method name of the RPC call
+ * @returns A function that takes parameters and an id and returns a
+ * JSON-RPC 2.0 request object
+ * @template Q - The type of the parameters for the RPC call, which
+ * can be an array or an object
+ */
 export function baseRpcRequest<Q extends Array<any> | Record<string, any>>(
   method: string
 ) {
   return (params: Q) =>
-    (id: number): RpcRequest<Q> => ({
+    (requestId: number | string): RpcRequest<Q> => ({
       jsonrpc: '2.0' as const,
       method,
       params,
-      id,
+      id: requestId,
     });
 }
 
+/**
+ * Extracts the parameters, method name, id, jsonrpc property, and
+ * the original RpcRequest object from a JSON-RPC 2.0 request
+ * object
+ * @param request - The JSON-RPC 2.0 request object
+ * @returns A tuple containing the parameters, method name, id,
+ * jsonrpc property, and the original RpcRequest object
+ * @template Q - The type of the parameters for the RPC call, which
+ * can be an array or an object
+ */
 export function unwrapRpcRequest<Q extends any[] | Record<string, any> = any>(
-  rpcRequest: RpcRequest<Q>
-) {
-  const { params, method, id, jsonrpc } = rpcRequest;
-  return [
-    params,
-    method,
-    id,
-    jsonrpc === '2.0',
-    rpcRequest,
-  ] as UnwrapedRpcRequest<Q>;
-}
-type UnwrapedRpcRequest<Q extends any[] | Record<string, any> = any> = [
-  params: any,
+  request: RpcRequest<Q>
+): [
   method: string,
+  params: Q | undefined,
   id: string | number | null,
   jsonrpc: boolean,
   rpcRequest: RpcRequest<Q>
-];
+] {
+  const { method, params, id, jsonrpc } = request;
+  return [method, params, id, jsonrpc === '2.0', request];
+}
+
+export const rpcParams = <Q extends any[] | Record<string, any> = any>(
+  request: RpcRequest<Q>
+) => unwrapRpcRequest(request)[1];
+export const rpcMethod = (request: RpcRequest<{}>) => request.method;
+export const rpcId = (request: RpcMessage) => request.id;
+
+type RpcMessage = RpcRequest<{}> | RpcResponse<unknown>;
+
+export const swapRpcId = (newId: number | string, request: RpcMessage) => {
+  const currentId = request.id;
+  request.id = newId;
+  return currentId ?? '';
+};

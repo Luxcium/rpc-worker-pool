@@ -144,7 +144,6 @@ export class RpcWorkerPool implements WorkerPool, WorkerPoolRpc {
 
     // The external_message_identifier is provided for feedback purpose only.
     const employee = this.getWorker();
-    external_message_identifier;
     const promise = new Promise<O>((resolve, reject) => {
       employee.in_flight_commands.set(internal_job_ref, {
         resolve,
@@ -224,7 +223,6 @@ export class RpcWorkerPool implements WorkerPool, WorkerPoolRpc {
     const error = msg?.error;
 
     const internal_job_ref = Number(msg.id);
-    // resolve: (value: any) => void, reject: (reason?: any) =>
     const { resolve, reject } = worker.in_flight_commands.get(
       internal_job_ref as number
     );

@@ -6,6 +6,8 @@
  * @param data
  */
 
+import { RpcRight } from '../types';
+
 const PARSE_ERROR = (id: string | number | null, data: any) => ({
   jsonrpc: '2.0' as const,
   error: {
@@ -132,3 +134,33 @@ export const RPC_ERRORS_FNS = {
   SERVER_ERROR,
   APPLICATION_ERROR,
 };
+
+/**
+ * Returns a function that creates a JSON-RPC 2.0 response object with a result property
+ * @param result - The result of the RPC call
+ * @returns A function that takes an id and returns a JSON-RPC 2.0 response object
+ */
+export function baseRpcResponseRight<R>(result: R) {
+  return (responseId: number | string): RpcRight<R> => ({
+    jsonrpc: '2.0' as const,
+    result,
+    id: responseId,
+  });
+}
+
+/**
+ * Extracts the result, id, jsonrpc property, and the original RpcRight object from a JSON-RPC 2.0 response object with a result property
+ * @param response - The JSON-RPC 2.0 response object with a result property
+ * @returns A tuple containing the result, id, jsonrpc property, and the original RpcRight object
+ */
+export function unwrapRpcResponseRight<R = unknown>(
+  response: RpcRight<R>
+): [
+  result: R,
+  id: string | number | null,
+  isJsonRpc: boolean,
+  originalResponse: RpcRight<R>
+] {
+  const { result, id, jsonrpc } = response;
+  return [result, id, jsonrpc === '2.0', response];
+}

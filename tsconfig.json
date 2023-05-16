@@ -7,16 +7,16 @@
     "module": "CommonJS",
     "moduleResolution": "node",
     "rootDir": "./src",
-    "outDir": "./docker/dist",
+    "outDir": "./build/lib",
     "declaration": true,
-    "declarationDir": "./docker/dist/typings",
-    "tsBuildInfoFile": "./docker/dist/ts-out-info.lib",
+    "declarationDir": "./build/typings",
+    "tsBuildInfoFile": "./build/ts-out-info.lib",
     "emitDecoratorMetadata": false,
     "experimentalDecorators": false,
-    "sourceMap": false,
-    "declarationMap": false,
-    "inlineSources": false,
-    "inlineSourceMap": false,
+    // "sourceMap": true, // opted out in favor of inlineSourceMap
+    "declarationMap": true,
+    "inlineSources": true,
+    "inlineSourceMap": true,
     "emitDeclarationOnly": false,
     /* JavaScript Support */
     "allowJs": true,
@@ -29,7 +29,6 @@
     /* Package names to be included without being referenced in a source file. */
     "types": [
       "node"
-      // "heft-jest"
     ],
     "baseUrl": "./",
     "paths": {
@@ -40,7 +39,7 @@
     }
   },
   "include": [
-    "./src",
+    "./src"
   ],
   "exclude": [
     "lib",

@@ -4,4 +4,4 @@ export {
   sanitizeURI,
   serializeURI,
 } from './codecs';
-export { methods } from './commands';
+export { methods } from './tools/commands';
