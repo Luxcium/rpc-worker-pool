@@ -1,10 +1,9 @@
-import { range } from '@luxcium/tools';
+import { delay, range } from '@luxcium/tools';
 import { existsSync } from 'fs';
 import { join } from 'path';
 import RpcWorkerPool from './RpcWorkerPool';
 import { isStrategy, strategies } from './utils';
 
-// const THREADS = 20;
 const STRATEGY = 'roundrobin';
 
 const SCRIPT_FILE_URI = join(
@@ -18,14 +17,24 @@ const scriptFileUri = SCRIPT_FILE_URI;
 
 void (async function MAIN({ threads }: { threads: number }) {
   console.log(`at: MAIN from ${__filename}`);
-
+  const workerPool = new RpcWorkerPool(scriptFileUri, threads, strategy);
+  await delay();
   // Range of tests:
   // for example 20 requests when set to range down from 30 to 10.
-  const testRequests = range(30, 10);
+  const from = 10;
+  const to = 19;
+  const testRequests: number[] = range(from, to);
 
-  const delaysAndLoads = ['1000', '1000', '5000', '5000'];
-
-  const workerPool = new RpcWorkerPool(scriptFileUri, threads, strategy);
+  // args value will echo back those values
+  const delaysAndLoads = [
+    '500',
+    '1500',
+    '125',
+    '750',
+    `range(${from}, ${to})`,
+    `{ threads: ${threads} }`,
+    'command_name: hello-world',
+  ];
 
   // hello world worker command method is a command taht can take
   // lower and upper bounds to do random delays in miliseconds and random
@@ -38,7 +47,7 @@ void (async function MAIN({ threads }: { threads: number }) {
       {
         ['@helloWorldWorkerResult→']: await $,
       },
-      { colors: true, depth: 10 }
+      { colors: true, depth: 10, compact: true }
     );
     return $;
   };
@@ -46,4 +55,4 @@ void (async function MAIN({ threads }: { threads: number }) {
   const allresults = Promise.all(testRequests.map(helloWorldWorker));
   await allresults;
   return process.exit(0);
-})({ threads: 20 });
+})({ threads: 4 });

@@ -19,6 +19,8 @@ interface RpcResponseError<E = any> {
   data?: any;
 }
 
+++ -------------------------------------------------------------------
+
 interface RpcRequest<P extends Array<any> | Record<string, any>> {
   jsonrpc: '2.0';
   method: string;

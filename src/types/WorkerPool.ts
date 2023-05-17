@@ -3,11 +3,11 @@ import { RpcRequest, RpcResponse } from './specs';
 
 export interface WorkerPool {
   exec: WorkerPoolExec;
-  verbose: boolean;
+  verbosity: boolean;
 }
 export interface WorkerPoolRpc {
   execRpc: WorkerPoolExecRpcRequest;
-  verbose: boolean;
+  verbosity: boolean;
 } // RpcRequest
 
 interface WorkerPoolExecRpcRequest {

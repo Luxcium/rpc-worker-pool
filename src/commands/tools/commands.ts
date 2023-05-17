@@ -9,6 +9,9 @@ import type {
   RpcRight,
 } from '../../types';
 import { getParams } from './getParams';
+
+const timeStamp = (timeElapsed: number) =>
+  Math.round(timeElapsed * 1_000_000) / 1_000_000;
 export const methods: Methods<unknown> = {
   async ['hello-world'](rpcRequest: RpcRequest<[IdsObject, ...string[]]>) {
     try {
@@ -17,41 +20,31 @@ export const methods: Methods<unknown> = {
       console.log(
         chalk.redBright('Hello world will echo back request as recieved:')
       );
-      // console.dir(rpcRequest, { colors: true });
+      console.dir(
+        { ['AS RECIEVED']: true, ...rpcRequest },
+        { colors: true, depth: 10, compact: true }
+      );
 
       const arg0 = Number(args[0]);
       const delay_0 = arg0 ? arg0 : 100;
-
       const arg1 = Number(args[1]);
       const delay_1 = arg1 ? arg1 : 100;
-
       const arg2 = Number(args[2]);
       const heavy_0 = arg2 ? arg2 : 10;
-
       const arg3 = Number(args[3]);
       const heavy_1 = arg3 ? arg3 : 10;
 
-      const task = await heavyTask(heavy_0, heavy_1);
       const initialTime_0 = performance.now();
-      // const [chosenDelay, actualDelay, actualDelay_0]
-      const { value, timeElapsed, totalTimeElapsed } = await delay(
-        delay_0,
-        delay_1
-      );
+      const taskValues = await heavyTask(heavy_0, heavy_1);
+      const delayValues = await delay(delay_0, delay_1);
 
       const result = {
-        ['hello-world']: 'Hello world just echo back!',
-        args,
-        argsList: {
-          arg0: [args[0], arg0],
-          delay_0,
-          arg1: [args[1], arg1],
-          delay_1,
-          heavy: [heavy_0, heavy_1],
-          task,
-          heavyTask: performance.now() - initialTime_0,
-        },
-        randomedelay: [value, timeElapsed, totalTimeElapsed],
+        heavyTask: [heavy_0, heavy_1],
+        taskValue: taskValues,
+        delay: [delay_0, delay_1],
+        delayValue: delayValues,
+        arg: args,
+        performance: timeStamp(performance.now() - initialTime_0),
       };
 
       const rpcResponse: RpcRight<typeof result> = {
@@ -65,10 +58,18 @@ export const methods: Methods<unknown> = {
       );
 
       const { external_message_identifier: id } = idsObject;
-      console.dir({ ...rpcResponse, id }, { colors: true });
+      console.dir(
+        { ['AS PREPROCESSED']: true, ...rpcResponse, id },
+        { colors: true, depth: 10, compact: true }
+      );
 
       console.log(chalk.yellowBright('Hello world returning the value now:'));
-      // await delay();
+
+      // this delay() call below is very important to be noticed it is
+      // what makes the diference beteween full output when it is not
+      // commented out and partial output when it is commented out but
+      // more information on that later LOOK:
+      await delay();
       return rpcResponse;
     } catch (error) {
       const rpcError: RpcLeft<typeof error> = APPLICATION_ERROR(

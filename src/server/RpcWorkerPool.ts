@@ -34,7 +34,7 @@ export class RpcWorkerPool implements WorkerPool, WorkerPoolRpc {
    * A boolean indicating whether logging is enabled. Defaults to false.
    * When logging is enabled, the pool will log messages to the console.
    */
-  private verbosity: boolean;
+  private _verbose: boolean;
   /**
    * An index used to implement round-robin scheduling of tasks. This value is incremented
    * with each call to `scheduleTask()` and is used to select a worker thread to execute the task.
@@ -88,7 +88,7 @@ export class RpcWorkerPool implements WorkerPool, WorkerPoolRpc {
     this.strategy = supportedStrategies.has(strategy)
       ? strategy
       : strategies.leastbusy;
-    this.verbosity = verbosity;
+    this._verbose = verbosity;
 
     this.rr_index = -1;
     this.next_job_ref = 0;
@@ -208,7 +208,7 @@ export class RpcWorkerPool implements WorkerPool, WorkerPoolRpc {
           }
         }
     }
-    this.verbosity &&
+    this._verbose &&
       console.log(
         `Worker: ${employee_number + 1} Message id: ${log_message_id || 0}`
       );
@@ -227,43 +227,76 @@ export class RpcWorkerPool implements WorkerPool, WorkerPoolRpc {
     msg: RpcResponse<any>,
     employee_number: number
   ): void {
-    const worker: {
-      worker: Worker;
-      in_flight_commands: Map<number, any>;
-      employee_number: number;
-    } = this.workers[employee_number];
+    // Each worker is represented as an object with the worker instance,
+    // a map of in-flight commands, and the worker's employee_number.
+    const worker = this.workers[employee_number];
 
+    // Convert the message id to a number to use as a reference to the job.
     const internal_job_ref = Number(msg.id);
+
+    // Get the in-flight command corresponding to the job reference.
     const internal_job = worker.in_flight_commands.get(internal_job_ref);
 
+    // If there's no corresponding in-flight command, log an error and return.
     if (!internal_job) {
-      console.error(
+      const error = new Error(
         `No in-flight command found for job ref: ${internal_job_ref}`
       );
-      return;
+      this.verbosity && console.error(error);
+      throw error;
     }
 
     const { resolve, reject, external_message_identifier } = internal_job;
+
+    // Delete the in-flight command from the worker's map as it's being processed.
     worker.in_flight_commands.delete(internal_job_ref);
 
+    // Process the result or error from the RPC response message.
     const result: unknown = msg?.result ?? null;
     const error: RpcResponseError<any> | null = msg?.error || null;
-
     if (!error && result != null) {
-      // resolve the promise with the result
-      resolve(baseRpcResponseRight(result)(external_message_identifier));
+      this.handleResult(resolve, result, external_message_identifier);
     } else {
-      // reject the promise with the error
-      reject(error);
+      this.handleError(reject, error);
     }
   }
 
-  // private verbosity: boolean;
-  get verbose(): boolean {
-    return this.verbosity;
+  /**
+   * Handle the result of the RPC response.
+   *
+   * @param resolve The resolve function of the promise associated with the job.
+   * @param result The result data from the RPC response.
+   * @param external_message_identifier The identifier for the external message.
+   */
+  private handleResult(
+    resolve: (value: unknown) => void,
+    result: unknown,
+    external_message_identifier: number | string
+  ): void {
+    // Wrap the result in an RpcRight object and resolve the promise with it.
+    resolve(baseRpcResponseRight(result)(external_message_identifier));
   }
-  set verbose(VERBOSE: boolean) {
-    this.verbosity = VERBOSE;
+
+  /**
+   * Handle the error of the RPC response.
+   *
+   * @param reject The reject function of the promise associated with the job.
+   * @param error The error data from the RPC response.
+   */
+  private handleError(
+    reject: (reason?: unknown) => void,
+    error: RpcResponseError<unknown> | null
+  ): void {
+    // Reject the promise with the error.
+    reject(error || 'An unknown error occurred');
+  }
+
+  // private verbosity: boolean;
+  get verbosity(): boolean {
+    return this._verbose;
+  }
+  set verbosity(VERBOSE: boolean) {
+    this._verbose = VERBOSE;
   }
 }
 
