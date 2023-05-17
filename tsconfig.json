@@ -8,16 +8,17 @@
     "moduleResolution": "node",
     "rootDir": "./src",
     "outDir": "./build/lib",
-    "declaration": true,
     "declarationDir": "./build/typings",
     "tsBuildInfoFile": "./build/ts-out-info.lib",
-    "emitDecoratorMetadata": false,
-    "experimentalDecorators": false,
-    // "sourceMap": true, // opted out in favor of inlineSourceMap
+    "declaration": true,
     "declarationMap": true,
     "inlineSources": true,
-    "inlineSourceMap": true,
+    "inlineSourceMap": false,
+    "sourceMap": true,
+    // "sourceMap": false, // opted out in favor of inlineSourceMap
     "emitDeclarationOnly": false,
+    "emitDecoratorMetadata": false,
+    "experimentalDecorators": false,
     /* JavaScript Support */
     "allowJs": true,
     "checkJs": false,

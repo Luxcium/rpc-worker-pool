@@ -18,16 +18,41 @@ const scriptFileUri = SCRIPT_FILE_URI;
 
 void (async function MAIN() {
   console.log(`at: MAIN from ${__filename}`);
-  const list = range(0, 1);
+  const list = range(0, 100);
 
   const workerPool = new RpcWorkerPool(scriptFileUri, threads, strategy);
 
-  const helloWorldWorker = async (i: number) =>
-    workerPool.exec('hello-world', i, ...['1', '1', '50', '50']);
+  const helloWorldWorker = async (i: number) => {
+    const $ = workerPool.exec(
+      'hello-world',
+      i,
+      ...['1000', '1000', '500', '500']
+    );
+    console.dir(
+      { ['@helloWorldWorkerResult→']: await $ },
+      { colors: true, depth: 10 }
+    );
+    return $;
+  };
 
-  const allresults = await Promise.all(list.map(helloWorldWorker));
+  const allresults = await Promise.all(
+    list.map(helloWorldWorker)
+    // .map(async $ => {
+    //   console.dir(
+    //     { ['@helloWorldWorkerResult→']: await $ },
+    //     { colors: true, depth: 10 }
+    //   );
+    //   return $;
+    // })
+  );
 
-  allresults.map($ => console.log('$', $));
-
+  // allresults.map($ => {
+  //   console.dir(
+  //     { ['@helloWorldWorkerResult→']: $ },
+  //     { colors: true, depth: 10 }
+  //   );
+  //   return $;
+  // });
+  allresults;
   return process.exit(0);
 })();

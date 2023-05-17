@@ -17,7 +17,7 @@ export const methods: Methods<unknown> = {
       console.log(
         chalk.redBright('Hello world will echo back request as recieved:')
       );
-      console.dir(rpcRequest, { colors: true });
+      // console.dir(rpcRequest, { colors: true });
 
       const arg0 = Number(args[0]);
       const delay_0 = arg0 ? arg0 : 100;
@@ -67,8 +67,8 @@ export const methods: Methods<unknown> = {
       const { external_message_identifier: id } = idsObject;
       console.dir({ ...rpcResponse, id }, { colors: true });
 
-      console.log(chalk.greenBright('Hello world returning the value now:'));
-      await delay();
+      console.log(chalk.yellowBright('Hello world returning the value now:'));
+      // await delay();
       return rpcResponse;
     } catch (error) {
       const rpcError: RpcLeft<typeof error> = APPLICATION_ERROR(

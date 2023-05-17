@@ -11,8 +11,8 @@ import {
 export function baseRpcResponseRight<R>(result: R) {
   return (responseId: number | string): RpcRight<R> => ({
     jsonrpc: '2.0' as const,
-    result,
     id: responseId,
+    result,
   });
 }
 

@@ -148,6 +148,7 @@ export class RpcWorkerPool implements WorkerPool, WorkerPoolRpc {
       employee.in_flight_commands.set(internal_job_ref, {
         resolve,
         reject,
+        external_message_identifier,
       });
     });
 
@@ -223,13 +224,12 @@ export class RpcWorkerPool implements WorkerPool, WorkerPoolRpc {
     const error = msg?.error;
 
     const internal_job_ref = Number(msg.id);
-    const { resolve, reject } = worker.in_flight_commands.get(
-      internal_job_ref as number
-    );
+    const { resolve, reject, external_message_identifier } =
+      worker.in_flight_commands.get(internal_job_ref as number);
     worker.in_flight_commands.delete(internal_job_ref as number);
 
     if (error) reject(error);
-    else resolve(baseRpcResponseRight(result)(NaN));
+    else resolve(baseRpcResponseRight(result)(external_message_identifier));
   }
 
   // private verbosity: boolean;
