@@ -1,6 +1,8 @@
 Based on the JSON-RPC 2.0 Specification documentation \
 Copyright (C) 2007-2010 by the JSON-RPC Working Group
 link: https://www.jsonrpc.org/specification
+
+type RpcResponse<R, E = any> = RpcLeft<E> | RpcRight<R>;
 interface RpcRight<R> {
   jsonrpc: '2.0';
   result: R;
@@ -16,7 +18,7 @@ interface RpcResponseError<E = any> {
   message: string;
   data?: any;
 }
-type RpcResponse<R, E = any> = RpcLeft<E> | RpcRight<R>;
+
 interface RpcRequest<P extends Array<any> | Record<string, any>> {
   jsonrpc: '2.0';
   method: string;

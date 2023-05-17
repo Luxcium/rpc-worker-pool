@@ -2,7 +2,13 @@
 import { Worker } from 'node:worker_threads';
 import { cpus } from 'os';
 import { baseRpcResponseRight } from '../API/RPC-serialise';
-import { RpcRequest, RpcResponse, WorkerPool, WorkerPoolRpc } from '../types';
+import {
+  RpcRequest,
+  RpcResponse,
+  RpcResponseError,
+  WorkerPool,
+  WorkerPoolRpc,
+} from '../types';
 import { strategies, supportedStrategies, type Strategies } from './utils';
 
 const CORES = cpus().length;
@@ -113,6 +119,7 @@ export class RpcWorkerPool implements WorkerPool, WorkerPoolRpc {
         in_flight_commands: new Map(),
         employee_number,
       });
+
       worker.on('message', (msg: RpcResponse<unknown>) => {
         this.onMessageHandler(msg, employee_number);
       });
@@ -209,27 +216,46 @@ export class RpcWorkerPool implements WorkerPool, WorkerPoolRpc {
     return this.workers[employee_number];
   }
   // ++ --------------------------------------------------------------
+
   /**
-   * Handler for messages received from worker threads.
-   * @param msg - The message received from the worker thread.
-   * @param employee_number - The ID of the worker thread that sent the message.
+   * This class method is used to handle incoming RPC messages from a worker.
+   *
+   * @param msg The RPC response message to be processed.
+   * @param employee_number The identifier for the worker that sent the message.
    */
   private onMessageHandler(
-    msg: RpcResponse<unknown>,
+    msg: RpcResponse<any>,
     employee_number: number
   ): void {
-    const worker = this.workers[employee_number];
-
-    const result = msg?.result;
-    const error = msg?.error;
+    const worker: {
+      worker: Worker;
+      in_flight_commands: Map<number, any>;
+      employee_number: number;
+    } = this.workers[employee_number];
 
     const internal_job_ref = Number(msg.id);
-    const { resolve, reject, external_message_identifier } =
-      worker.in_flight_commands.get(internal_job_ref as number);
-    worker.in_flight_commands.delete(internal_job_ref as number);
+    const internal_job = worker.in_flight_commands.get(internal_job_ref);
 
-    if (error) reject(error);
-    else resolve(baseRpcResponseRight(result)(external_message_identifier));
+    if (!internal_job) {
+      console.error(
+        `No in-flight command found for job ref: ${internal_job_ref}`
+      );
+      return;
+    }
+
+    const { resolve, reject, external_message_identifier } = internal_job;
+    worker.in_flight_commands.delete(internal_job_ref);
+
+    const result: unknown = msg?.result ?? null;
+    const error: RpcResponseError<any> | null = msg?.error || null;
+
+    if (!error && result != null) {
+      // resolve the promise with the result
+      resolve(baseRpcResponseRight(result)(external_message_identifier));
+    } else {
+      // reject the promise with the error
+      reject(error);
+    }
   }
 
   // private verbosity: boolean;
