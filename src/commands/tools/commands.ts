@@ -1,4 +1,4 @@
-import { delay, heavyTask } from '@luxcium/tools';
+import { delay, heavyTask, timeStamp } from '@luxcium/tools';
 import chalk from 'chalk';
 import { APPLICATION_ERROR } from '../../API';
 import type {
@@ -10,8 +10,6 @@ import type {
 } from '../../types';
 import { getParams } from './getParams';
 
-const timeStamp = (timeElapsed: number) =>
-  Math.round(timeElapsed * 1_000_000) / 1_000_000;
 export const methods: Methods<unknown> = {
   async ['hello-world'](rpcRequest: RpcRequest<[IdsObject, ...string[]]>) {
     try {
@@ -26,13 +24,13 @@ export const methods: Methods<unknown> = {
       );
 
       const arg0 = Number(args[0]);
-      const delay_0 = arg0 ? arg0 : 100;
+      const delay_0 = isFinite(arg0) ? arg0 : 100;
       const arg1 = Number(args[1]);
-      const delay_1 = arg1 ? arg1 : 100;
+      const delay_1 = isFinite(arg1) ? arg1 : 100;
       const arg2 = Number(args[2]);
-      const heavy_0 = arg2 ? arg2 : 10;
+      const heavy_0 = isFinite(arg2) ? arg2 : 10;
       const arg3 = Number(args[3]);
-      const heavy_1 = arg3 ? arg3 : 10;
+      const heavy_1 = isFinite(arg3) ? arg3 : 10;
 
       const initialTime_0 = performance.now();
       const taskValues = await heavyTask(heavy_0, heavy_1);
@@ -69,7 +67,7 @@ export const methods: Methods<unknown> = {
       // what makes the diference beteween full output when it is not
       // commented out and partial output when it is commented out but
       // more information on that later LOOK:
-      await delay();
+      // await delay();
       return rpcResponse;
     } catch (error) {
       const rpcError: RpcLeft<typeof error> = APPLICATION_ERROR(

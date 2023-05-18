@@ -27,10 +27,10 @@ void (async function MAIN({ threads }: { threads: number }) {
 
   // args value will echo back those values
   const delaysAndLoads = [
-    '500',
-    '1500',
-    '125',
-    '750',
+    '0',
+    '0',
+    '1',
+    '1',
     `range(${from}, ${to})`,
     `{ threads: ${threads} }`,
     'command_name: hello-world',
