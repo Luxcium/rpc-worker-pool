@@ -167,8 +167,8 @@ export type { UnwrapedRpcNotification };
 export function baseRpcRequest<Q extends Array<any> | Record<string, any>>(
   method: string
 ) {
-  return (params: Q) =>
-    (requestId: number | string): RpcRequest<Q> => ({
+  return <P extends Array<any> | Record<string, any> = Q>(params: P) =>
+    (requestId: number | string): RpcRequest<P> => ({
       jsonrpc: '2.0' as const,
       method,
       params,

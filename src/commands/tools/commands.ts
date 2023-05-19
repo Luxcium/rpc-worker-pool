@@ -1,5 +1,5 @@
 import { delay, heavyTask, timeStamp } from '@luxcium/tools';
-import { IPerformanceResult } from '@luxcium/tools/lib/typings/delay/delay';
+import { DelayValue, TaskValue } from '@luxcium/tools/lib/typings/delay/delay';
 import chalk from 'chalk';
 import { APPLICATION_ERROR } from '../../API';
 import type { IdsObject, RpcLeft, RpcRequest, RpcRight } from '../../types';
@@ -36,12 +36,9 @@ export const methods: Methods<unknown> = {
 
       const awaited = Boolean(args[6] === 'true');
 
-      let delayValues_a: IPerformanceResult<number>;
-      let delayValues_b: IPerformanceResult<number>;
-      let taskValues: IPerformanceResult<{
-        steps: number;
-        result: number;
-      }>;
+      let delayValues_a: DelayValue;
+      let delayValues_b: DelayValue;
+      let taskValues: TaskValue;
 
       if (awaited) {
         const _delayValues_a = delay(delay_0a, delay_1a);
@@ -63,8 +60,9 @@ export const methods: Methods<unknown> = {
       }
 
       const result = {
+        delay_a: [delay_0a, delay_1a],
         heavyTask: [heavy_0, heavy_1],
-        delay: [delay_0a, delay_1a],
+        delay_b: [delay_0b, delay_1b],
         awaited: awaited,
         delayValues_a,
         taskValue: taskValues,
@@ -73,7 +71,7 @@ export const methods: Methods<unknown> = {
           timeStamp(performance.now() - initialTime_0),
           initialTime_0,
         ],
-        arg: args,
+        args: args,
       };
 
       const rpcResponse: RpcRight<typeof result> = {

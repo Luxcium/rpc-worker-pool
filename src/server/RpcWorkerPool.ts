@@ -1,4 +1,6 @@
 'use strict';
+import { existsSync } from 'node:fs';
+import { join } from 'node:path';
 import { Worker } from 'node:worker_threads';
 import { cpus } from 'os';
 import { baseRpcResponseRight } from '../API/RPC-serialise';
@@ -79,7 +81,28 @@ export class RpcWorkerPool implements WorkerPool, WorkerPoolRpc {
    * When logging is enabled, the pool will log messages to the console.
    */
   constructor(
+    pathURI: null,
+    size: number,
+    strategy: Strategies,
+    verbosity?: false | true
+  );
+  /**
+   * Creates a new RpcWorkerPool object.
+   * @param pathURI - The file path of the worker thread code.
+   * @param size - The number of worker threads to create. Defaults to the number of CPU cores.
+   * @param strategy - The strategy used to allocate tasks to worker threads. Defaults to 'leastbusy'.
+   * @param verbosity - A boolean indicating whether logging is enabled. Defaults to false.
+   * When logging is enabled, the pool will log messages to the console.
+   * @deprecated
+   */
+  constructor(
     pathURI: string,
+    size: number,
+    strategy: Strategies,
+    verbosity?: false | true
+  );
+  constructor(
+    pathURI: string | null,
     size: number = 0,
     strategy: Strategies = strategies.leastbusy,
     verbosity = false
@@ -89,7 +112,12 @@ export class RpcWorkerPool implements WorkerPool, WorkerPoolRpc {
       ? strategy
       : strategies.leastbusy;
     this._verbose = verbosity;
-
+    const SCRIPT_FILE_URI = join(
+      `${__dirname}/worker.${
+        existsSync(`${__dirname}/worker.ts`) ? 'ts' : 'js'
+      }`
+    );
+    void pathURI;
     this.rr_index = -1;
     this.next_job_ref = 0;
     this.workers = [];
@@ -107,7 +135,7 @@ export class RpcWorkerPool implements WorkerPool, WorkerPoolRpc {
         {
           eval: true,
           workerData: {
-            runThisFileInTheWorker: pathURI, // '/path/to/worker-script.ts'
+            runThisFileInTheWorker: SCRIPT_FILE_URI, // '/path/to/worker-script.ts'
             workerAsset: employee_number,
           },
         }
@@ -120,15 +148,13 @@ export class RpcWorkerPool implements WorkerPool, WorkerPoolRpc {
         employee_number,
       });
 
-      worker.on('message', (msg: RpcResponse<unknown>) => {
+      worker.on('message', (msg: RpcResponse<unknown, unknown>) => {
         this.onMessageHandler(msg, employee_number);
       });
     }
   }
-  async execRpc<O = unknown>(
-    rpcRequest: RpcRequest<string[]>
-  ): Promise<RpcResponse<O, unknown>> {
-    return this.exec(
+  async execRpc<R = unknown>(rpcRequest: RpcRequest<string[]>): Promise<R> {
+    return this.exec<R>(
       rpcRequest.method,
       Number(rpcRequest.id),
       ...(rpcRequest.params || [])
