@@ -84,7 +84,7 @@ function errorHandler(msg: string, error: unknown) {
 }
 const workerAsset = workerData.workerAsset;
 console.log(
-  `WORKER(${threadId}):${
+  `WORKER(${threadId - 1}):${
     threadId - workerAsset === 1 ? '' : ` EmployeeID: '${workerAsset}'`
   } from ${__filename}`
 );
