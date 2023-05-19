@@ -2,13 +2,8 @@ import { delay, heavyTask, timeStamp } from '@luxcium/tools';
 import { IPerformanceResult } from '@luxcium/tools/lib/typings/delay/delay';
 import chalk from 'chalk';
 import { APPLICATION_ERROR } from '../../API';
-import type {
-  IdsObject,
-  RpcLeft,
-  RpcRequest,
-  RpcResponse,
-  RpcRight,
-} from '../../types';
+import type { IdsObject, RpcLeft, RpcRequest, RpcRight } from '../../types';
+import { Methods } from './Methods';
 import { getParams } from './getParams';
 
 export const methods: Methods<unknown> = {
@@ -119,7 +114,3 @@ export const methods: Methods<unknown> = {
     }
   },
 };
-
-export type Method = <O>(rpcRequest: RpcRequest<string[]>) => Promise<O>;
-// prettier-ignore
-export type Methods<O> ={[k: string]:(rpcRequest: RpcRequest<[IdsObject,...string[]]>) => Promise<RpcResponse<O>>};
