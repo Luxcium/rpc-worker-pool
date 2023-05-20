@@ -1,11 +1,16 @@
 import { delay, range } from '@luxcium/tools';
 import chalk from 'chalk';
-import { baseRpcRequest } from '../../API/RPC-serialise';
-import RpcWorkerPool from '../RpcWorkerPool';
-import { ArgsTuple, HelloWorldWorkerResultRpc } from '../types';
-import { isStrategy, strategies } from '../utils';
+import { baseRpcRequest } from '../API/RPC-serialise';
+import RpcWorkerPool from '../server/RpcWorkerPool';
+import { isStrategy, strategies } from '../server/utils';
+import {
+  ArgsTuple,
+  HelloWorldWorkerResultRpc,
+} from '../types/hello-world-method';
 
-const strategy = isStrategy('leastbusy') ? 'leastbusy' : strategies.roundrobin;
+const strategy = isStrategy('roundrobin')
+  ? 'roundrobin'
+  : strategies.roundrobin;
 
 void (async function MAIN({ threads }: { threads: number }) {
   console.log(`at: MAIN from ${__filename}`);

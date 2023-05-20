@@ -1,1 +1,1 @@
-export {};
+import './clients/_pool-instance';

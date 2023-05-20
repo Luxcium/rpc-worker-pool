@@ -1,7 +1,12 @@
+export { methods } from './methods';
 export {
+  createCommand,
   decodeSanitizedURI,
   deserializeURI,
+  getIDsObject,
+  getParams,
+  getStrArgs,
+  isString,
   sanitizeURI,
   serializeURI,
-} from './codecs';
-export { methods } from './tools/commands';
+} from './tools';

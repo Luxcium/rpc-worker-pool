@@ -1,4 +1,4 @@
-import type { IdsObject, RpcRequest, RpcResponse } from '../../types';
+import type { IdsObject, RpcRequest, RpcResponse } from '.';
 
 // prettier-ignore
 

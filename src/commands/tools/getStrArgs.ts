@@ -1,4 +1,4 @@
-import { deserializeURI } from '../codecs';
+import { deserializeURI } from './codecs';
 import { isString } from './isString';
 
 export function getStrArgs(rpcRequest: any) {
