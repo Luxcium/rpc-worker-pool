@@ -14,6 +14,7 @@ export type ArgsTuple = [
   lowerBoundDelay_b: NumberString,
   upperBoundDelay_b: NumberString,
   awaited: BooleanString,
+  delay: BooleanString,
   range: Range,
   threads: Threads,
   commandName: CommandName

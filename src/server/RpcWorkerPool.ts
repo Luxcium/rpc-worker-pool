@@ -230,7 +230,7 @@ export class RpcWorkerPool implements WorkerPool, WorkerPoolRpc {
           let worker = this.workers[i];
           if (worker.in_flight_commands.size < min) {
             min = worker.in_flight_commands.size;
-            employee_number = 0;
+            employee_number = i;
           }
         }
     }

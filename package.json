@@ -22,7 +22,9 @@
   "license": "MIT",
   "dependencies": {
     "chalk": "4.1.2",
-    "@luxcium/tools": "workspace:*"
+    "@luxcium/bigintstring": "workspace:*",
+    "@luxcium/tools": "workspace:*",
+    "@luxcium/redis-services": "workspace:*"
   },
   "devDependencies": {
     "@babel/core": "~7.21.8",

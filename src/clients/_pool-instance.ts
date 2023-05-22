@@ -8,9 +8,7 @@ import {
   HelloWorldWorkerResultRpc,
 } from '../types/hello-world-method';
 
-const strategy = isStrategy('roundrobin')
-  ? 'roundrobin'
-  : strategies.roundrobin;
+const strategy = isStrategy('leastbusy') ? 'leastbusy' : strategies.leastbusy;
 
 void (async function MAIN({ threads }: { threads: number }) {
   console.log(`at: MAIN from ${__filename}`);
@@ -21,12 +19,13 @@ void (async function MAIN({ threads }: { threads: number }) {
   const testRequests: number[] = range(from, to);
 
   const delaysAndLoads: ArgsTuple = [
-    '1000',
-    '1000',
+    '0',
+    '0',
     '5440',
     '5440',
-    '1000',
-    '1000',
+    '0',
+    '0',
+    'true',
     'true',
     `range(${from}, ${to})`,
     `{ threads(workers): ${threads} }`,

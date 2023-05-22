@@ -7,12 +7,22 @@ import {
   Threads,
 } from '../../../types/hello-world-method';
 
-export function extractRange(array: ArgsTuple): [Range, Threads, CommandName] {
-  return [array[7], array[8], array[9]];
+export function extractRange(args: ArgsTuple): [Range, Threads, CommandName] {
+  const len = args.length;
+  return [
+    args[len - 3] as Range,
+    args[len - 2] as Threads,
+    args[len - 1] as CommandName,
+  ];
 }
 
 export function extractArgs(args: ArgsTuple): [Range, Threads, CommandName] {
-  return [args[7], args[8], args[9]];
+  const len = args.length;
+  return [
+    args[len - 3] as Range,
+    args[len - 2] as Threads,
+    args[len - 1] as CommandName,
+  ];
 }
 
 export function isRange(value: string): value is Range {

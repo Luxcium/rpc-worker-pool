@@ -35,6 +35,7 @@ export const methods: Methods<unknown> = {
       const delay_1b = isFinite(arg5) ? arg5 : 10;
 
       const awaited = Boolean(args[6] === 'true');
+      const delayed = Boolean(args[6] === 'true');
 
       let delayValues_a: DelayValue;
       let delayValues_b: DelayValue;
@@ -100,7 +101,7 @@ export const methods: Methods<unknown> = {
       // what makes the diference beteween full output when it is not
       // commented out and partial output when it is commented out but
       // more information on that later LOOK:
-      // await delay(1);
+      delayed && (await delay(1));
       return rpcResponse;
     } catch (error) {
       const rpcError: RpcLeft<typeof error> = APPLICATION_ERROR(
