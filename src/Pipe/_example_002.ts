@@ -1,21 +1,33 @@
 /**
  * Type representing a function that encapsulates an asynchronous operation.
  */
-export type DeferredAsyncFunction<R = unknown> = () => Promise<R>;
+export type Deferred<R = unknown> = () => Promise<R>;
 
 /**
  * Interface for an object that encapsulates asynchronous operations.
  */
 interface OperationObject<R = unknown> {
-  [key: string]: DeferredAsyncFunction<R>;
+  [key: string]: Deferred<R>;
 }
+
+type Deferred_<R = unknown> = () => Promise<R>;
+
+export type OperationObject_<K extends PropertyKey, R = unknown> = {
+  [P in K]: Deferred_<R>;
+};
+
+export type WithFileName = {
+  fileName: string;
+};
+
+export type WithFileName_ = OperationObject_<'fileName', string>;
 
 /**
  * Type representing a function that adds an operation to an OperationObject.
  */
 export type OperationEncapsulationFunction<R = unknown> = (
   input: OperationObject,
-  operation: DeferredAsyncFunction<R>
+  operation: Deferred<R>
 ) => OperationObject;
 
 /**
@@ -29,7 +41,7 @@ export class DAOEObject {
    * @param key The key to store the operation under.
    * @param operation The operation to store.
    */
-  addOperation<R>(key: string, operation: DeferredAsyncFunction<R>): void {
+  addOperation<R>(key: string, operation: Deferred<R>): void {
     this.operations[key] = operation;
   }
 
@@ -38,7 +50,7 @@ export class DAOEObject {
    * @param key The key of the operation to retrieve.
    * @returns The operation, or undefined if no operation is stored under the given key.
    */
-  getOperation(key: string): DeferredAsyncFunction | undefined {
+  getOperation(key: string): Deferred | undefined {
     return this.operations[key];
   }
 
@@ -74,9 +86,29 @@ export class DAOEObject {
 export function addOperationToObj<R>(
   obj: OperationObject,
   key: string,
-  operation: DeferredAsyncFunction<R>
+  operation: Deferred<R>
 ): OperationObject {
   const newObj = { ...obj };
   newObj[key] = operation;
   return newObj;
 }
+// /=//==//===//====//=====//======//=======//========//=============/
+type TheTryCatchArgs<A, R, E> = {
+  fnct: (...a: A[]) => R | Promise<R>;
+  errMsg: string;
+  errVal: E;
+};
+const logError = console.error;
+export async function theTryCathBlock<A, R, E = R>(
+  { fnct, errMsg, errVal }: TheTryCatchArgs<A, R, E>,
+  ...args: A[]
+): Promise<R | E> {
+  try {
+    const result = fnct(...args);
+    return await Promise.resolve(result);
+  } catch (error) {
+    logError(error, `at: ${errMsg}`);
+    return errVal;
+  }
+}
+// /=//==//===//====//=====//======//=======//========//=============/

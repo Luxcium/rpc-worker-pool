@@ -24,7 +24,8 @@
     "chalk": "4.1.2",
     "@luxcium/bigintstring": "workspace:*",
     "@luxcium/tools": "workspace:*",
-    "@luxcium/redis-services": "workspace:*"
+    "@luxcium/redis-services": "workspace:*",
+    "mapping-tools": "workspace:*"
   },
   "devDependencies": {
     "@babel/core": "~7.21.8",

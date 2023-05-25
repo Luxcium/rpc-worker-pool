@@ -1,3 +1,6 @@
+import { fn_a1f9a } from 'mapping-tools/lib/typings/functions/core';
+import { MapperOptions } from 'mapping-tools/lib/typings/types';
+
 export interface ITransformInput<T, R> {
   transformInput(input: T): R;
 }
@@ -68,3 +71,16 @@ export class Pipeline<T, R> {
     ) as R;
   }
 }
+
+export type Fn_a1f9a<T, R> = ({
+  item,
+  index,
+  array,
+  transform = async value => value as any as R,
+  lookup = (value, index, array) => void [value, index, array],
+  validate = async (value, index, array) => void [value, index, array],
+  errLookup = (value, index, currentRejection) =>
+    void [value, index, currentRejection],
+}: MapperOptions<T, R>) => any;
+
+fn_a1f9a;
