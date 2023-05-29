@@ -1,9 +1,9 @@
 import { BaseProcessStep } from '.';
-import { ITransformInput } from '../tools/types';
+import { ITransformInput, IUnbox } from '../tools/types';
 
 export class ProcessStep<T, R>
   extends BaseProcessStep<T, R>
-  implements ITransformInput<T, R>
+  implements ITransformInput<T, R>, IUnbox<(input: T) => R>
 {
   static of<TVal, RVal>(transform: (input: TVal) => RVal) {
     return new ProcessStep<TVal, RVal>(transform);

@@ -25,7 +25,8 @@
     "@luxcium/bigintstring": "workspace:*",
     "@luxcium/tools": "workspace:*",
     "@luxcium/redis-services": "workspace:*",
-    "mapping-tools": "workspace:*"
+    "mapping-tools": "workspace:*",
+    "@luxcium/phash-compute": "workspace:*"
   },
   "devDependencies": {
     "@babel/core": "~7.21.8",
