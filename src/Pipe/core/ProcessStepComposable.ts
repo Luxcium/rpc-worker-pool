@@ -14,20 +14,17 @@ export class ProcessStepComposable<T, R>
   protected constructor(transform: (input: T) => R) {
     super(transform);
   }
-  public precompose<U>(
-    preComposeWith: (input: T) => U
-  ): ProcessStepComposable<T, U> {
+  public precompose<I>(
+    preComposeWith: (input: I) => T
+  ): ProcessStepComposable<I, R> {
     const transform: (input: T) => R = this._transform;
-    // input transform preComposeWith
-    const composedTransform = (input: T) => transform(preComposeWith(input)); //
-    // preComposeWith(transform());
-    return new ProcessStepComposable(composedTransform);
+    const composedTransform = (input: I) => transform(preComposeWith(input));
+    return new ProcessStepComposable<I, R>(composedTransform);
   }
-
-  public compose<U>(composeWith: (input: R) => U): ProcessStepComposable<T, U> {
+  public compose<O>(composeWith: (input: R) => O): ProcessStepComposable<T, O> {
     const transform: (input: T) => R = this._transform;
     const composedTransform = (input: T) => composeWith(transform(input));
-    return new ProcessStepComposable<T, U>(composedTransform);
+    return new ProcessStepComposable<T, O>(composedTransform);
   }
 }
 
