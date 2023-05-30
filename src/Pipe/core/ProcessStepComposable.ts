@@ -1,5 +1,5 @@
-import { BaseProcessStep, ProcessStep } from '.';
-import { ICompose, ITransformInput, IUnbox } from '../tools/types';
+import { ProcessableStep, ProcessStep } from '.';
+import { ICompose, ITransformInput, IUnbox } from './types';
 
 export class ProcessStepComposable<T, R>
   extends ProcessStep<T, R>
@@ -8,7 +8,7 @@ export class ProcessStepComposable<T, R>
   static override of<TVal, RVal>(transform: (input: TVal) => RVal) {
     return new ProcessStepComposable<TVal, RVal>(transform);
   }
-  static override from<TVal, RVal>(processStep: BaseProcessStep<TVal, RVal>) {
+  static override from<TVal, RVal>(processStep: ProcessableStep<TVal, RVal>) {
     return new ProcessStepComposable<TVal, RVal>(processStep.transform);
   }
   protected constructor(transform: (input: T) => R) {
@@ -27,11 +27,3 @@ export class ProcessStepComposable<T, R>
     return new ProcessStepComposable<T, O>(composedTransform);
   }
 }
-
-//
-/*
-// folder (path to an image folder) const giveNameTo_
-// list files
-// filter per image extension case insensitive (using a set)
-//
- */
