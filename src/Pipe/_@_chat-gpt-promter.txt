@@ -1,0 +1,26 @@
+https://raw.githubusercontent.com/Luxcium/rpc-worker-pool/rpc-worker-pool/src/Pipe/core/ProcessStepComposable.ts
+
+The link above show code previously discussed with an other session of the AI thatinspired me to create a new version that would be of single use (please see below the concept of IUnWrap, IWrap, IWrapUnWrap to understand th new single use input unwrap -> transformation -> output wrap) compared to this chainable multi-use version of the code (that is the link above)
+
+Also described later in this message the code in the previous message I sent you befor this one is provided below in the form of a link to the raw version of the code. where as the linke above (ProcessStepComposable.ts) is what inspired me... all other links below are more or less the same code as presented to you so far in the previous message I sent you befor this except for that one which will give an idea of the topology of the repo along with the previously describe types ITransformInput and IUnbox
+
+https://github.com/Luxcium/rpc-worker-pool/blob/rpc-worker-pool/src/Pipe/tools/types/index.ts
+
+
+I want to show you some code but first you must understand the typings that goes with it so please ingest that first to remind you what was already provided in an earlier message:
+
+https://github.com/Luxcium/rpc-worker-pool/blob/rpc-worker-pool/src/Pipe/core/BaseProcessStep.ts
+
+
+
+!!!
+important: due to previous interactions with your same AI Model it is important to note that this is now mandatory:  (members must have an 'override' modifier each times it overrides a member in a base class as per ts(4114))...
+!!!
+
+
+
+
+
+https://raw.githubusercontent.com/Luxcium/rpc-worker-pool/rpc-worker-pool/src/Pipe/core/ProcessStep.ts
+
+please ingest the code above (and in previous messages) then please remember the first part of the code provided in a previous message then you will see some informations missing are now available such that it would be important to describe again each parts of the code and give an exhaustive analysis on each sup component of the code down to the type parameter used and the naming convention it seems to use not only but also doing a thorough analysis of each class names each method names and each parameter or variable names... the analysis is more about how the code is written and the consistency of all parts together rather than what the code aims to achieve per say... it can be part of your analysis to explain what the code aims at achieving but the main focus of the analysis should be the code  soundness the quality of the code in term of clean coding best practices the analysis and detection of code smells and the advice that you can give on each parts of the code lastly at the end please summarize each element that the code itself implements overall in term of best practices and such please be specific and do a complete summarization of each thing worthy of mention
