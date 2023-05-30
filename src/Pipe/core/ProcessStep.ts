@@ -22,7 +22,6 @@ export class ProcessStep<T, R>
   protected constructor(transform: (input: T) => R) {
     super(transform);
   }
-
   public transformInput(input: T): R {
     return this._transform(input);
   }
