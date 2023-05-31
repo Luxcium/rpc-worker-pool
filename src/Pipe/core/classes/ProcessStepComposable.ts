@@ -33,4 +33,20 @@ export class ProcessStepComposable<T, R>
     const { transform } = this;
     return ProcessStepComposable.of(funct(transform));
   }
+
+  override ap<I, O>(
+    fn: ProcessStep<I, (input: MapFunction<T, R>) => O>
+  ): ProcessStepComposable<I, O> {
+    const { transform } = this;
+    return ProcessStepComposable.of<I, O>(input =>
+      fn.transform(input)(transform)
+    );
+  }
+
+  override chain<I, O>(
+    fn: (input: MapFunction<T, R>) => ProcessStepComposable<I, O>
+  ): ProcessStepComposable<I, O> {
+    const { transform } = this;
+    return fn(transform);
+  }
 }

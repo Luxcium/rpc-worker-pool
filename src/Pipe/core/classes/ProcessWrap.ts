@@ -39,7 +39,7 @@ export class ProcessWrap<T, R>
     return ProcessWrap.of<I, O>(input => fn.transform(input)(transform));
   }
 
-  override chain<I, O>(
+  chain<I, O>(
     fn: (input: MapFunction<T, R>) => ProcessWrap<I, O>
   ): ProcessWrap<I, O> {
     const { transform } = this;

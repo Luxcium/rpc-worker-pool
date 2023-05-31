@@ -4,8 +4,8 @@ import type {
   IUnbox,
   MapFunction,
 } from '../../types';
-import { ProcessWrap } from '../BaseProcessWrap';
 import { ProcessStep } from '../ProcessStep';
+import { ProcessWrap } from '../ProcessWrap';
 import { ProcessableStep } from './ProcessableStep';
 
 export abstract class ProcessableWrapedStep<T, R>
