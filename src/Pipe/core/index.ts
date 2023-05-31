@@ -1,4 +1,3 @@
 export { Pipeline } from './Pipeline';
-export { ProcessStep } from './classes/ProcessStep';
-export { ProcessStepComposable } from './classes/ProcessStepComposable';
-export { ProcessableStep } from './classes/bases/ProcessableStep';
+export { ProcessStep, ProcessStepComposable } from './classes';
+export { ProcessWrap } from './classes/bases/ProcessableWrapedStep';

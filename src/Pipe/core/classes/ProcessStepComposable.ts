@@ -1,5 +1,5 @@
-import { ProcessableStep, ProcessStep } from '..';
 import { ICompose, ITransformInput, IUnbox, MapFunction } from '../types';
+import { ProcessStep, ProcessableStep } from './';
 
 export class ProcessStepComposable<T, R>
   extends ProcessStep<T, R>

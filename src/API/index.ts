@@ -1,6 +1,23 @@
 import { RPC_ERRORS_FNS } from './RPC-errors';
 
-export { swapRpcId } from './RPC-serialise';
+export {
+  baseRpcNotification,
+  baseRpcRequest,
+  baseRpcResponseError,
+  baseRpcResponseLeft,
+  baseRpcResponseRight,
+  rpcId,
+  rpcMethod,
+  rpcParams,
+  swapRpcId,
+  unwrapRpcError,
+  unwrapRpcNotification,
+  unwrapRpcRequest,
+  unwrapRpcResponse,
+  unwrapRpcResponseLeft,
+  unwrapRpcResponseRight,
+  type UnwrapedRpcNotification,
+} from './RPC-serialise';
 export { RPC_ERRORS_FNS };
 export const {
   PARSE_ERROR,
