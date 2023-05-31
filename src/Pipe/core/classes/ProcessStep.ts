@@ -4,7 +4,7 @@ import type {
   IUnbox,
   MapFunction,
 } from '../types';
-import { ProcessableStep } from './';
+import { ProcessableStep } from './bases/ProcessableStep';
 
 export class ProcessStep<T, R>
   extends ProcessableStep<T, R>

@@ -16,8 +16,8 @@ import {
   unwrapRpcResponseLeft,
   unwrapRpcResponseRight,
 } from '../../../API';
-import { ProcessStep, ProcessWrap } from '../../core';
-import { ProcessStepComposable } from '../../proto-pipeline';
+import { ProcessStep } from '../../core/classes/ProcessStep';
+import { ProcessWrap } from '../../core/classes/bases/ProcessableWrapedStep';
 
 baseRpcNotification;
 baseRpcRequest;
@@ -57,5 +57,4 @@ SERVER_ERROR;
 APPLICATION_ERROR;
 
 ProcessStep;
-ProcessStepComposable;
 ProcessWrap;
