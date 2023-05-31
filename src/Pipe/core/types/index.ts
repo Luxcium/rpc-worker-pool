@@ -5,3 +5,4 @@ export type { IUnWrap } from './IUnWrap';
 export type { IUnbox } from './IUnbox';
 export type { IWrap } from './IWrap';
 export type { IWrapUnWrap } from './IWrapUnWrap';
+export type { MapFunction } from './MapFunction';

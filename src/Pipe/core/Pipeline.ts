@@ -1,4 +1,4 @@
-import { ProcessStep } from './ProcessStep';
+import { ProcessStep } from './classes/ProcessStep';
 
 export class Pipeline<T, R> {
   private constructor(private readonly steps: ProcessStep<any, any>[]) {}

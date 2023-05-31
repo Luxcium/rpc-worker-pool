@@ -1,7 +1,11 @@
-import { ProcessWrap } from '../../BaseProcessWrap';
-import { ProcessStep } from '../../ProcessStep';
-import { ITransformInput, IUnbox } from '../../types';
-import { type IGetTransform } from '../../types/IGetTransform';
+import type {
+  IGetTransform,
+  ITransformInput,
+  IUnbox,
+  MapFunction,
+} from '../../types';
+import { ProcessWrap } from '../BaseProcessWrap';
+import { ProcessStep } from '../ProcessStep';
 import { ProcessableStep } from './ProcessableStep';
 
 export abstract class ProcessableWrapedStep<T, R>
@@ -20,4 +24,16 @@ export abstract class ProcessableWrapedStep<T, R>
   protected constructor(transform: (input: T) => R) {
     super(transform);
   }
+
+  abstract override map<I = any, O = any>(
+    fn: (input: MapFunction<T, R>) => MapFunction<I, O>
+  ): ProcessableWrapedStep<I, O>;
+
+  abstract override ap<I, O>(
+    fn: ProcessableStep<I, (input: MapFunction<T, R>) => O>
+  ): ProcessableWrapedStep<I, O>;
+
+  abstract override chain<I, O>(
+    fn: (input: MapFunction<T, R>) => ProcessableWrapedStep<I, O>
+  ): ProcessableWrapedStep<I, O>;
 }

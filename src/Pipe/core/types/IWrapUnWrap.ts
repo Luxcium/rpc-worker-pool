@@ -1,4 +1,5 @@
-import { ProcessWithUnWrap, ProcessWithWrap } from '../BaseProcessWrap';
+import { ProcessWithUnWrap } from '../classes/ProcessWithUnWrap';
+import { ProcessWithWrap } from '../classes/ProcessWithWrap';
 
 export interface IWrapUnWrap<T, R> {
   unWrap<I>(preComposeWith: (input: I) => T): ProcessWithWrap<I, R>;

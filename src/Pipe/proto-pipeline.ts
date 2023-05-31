@@ -8,7 +8,7 @@ export abstract class BaseProcessStep<T, R> {
   constructor(protected _transform: (input: T) => R) {}
 }
 
-export class ProcessStep<T, R>
+export class ProcessStep_<T, R>
   extends BaseProcessStep<T, R>
   implements ITransformInput<T, R>
 {
@@ -20,7 +20,7 @@ export class ProcessStep<T, R>
   }
 }
 export class ProcessStepComposable<T, R>
-  extends ProcessStep<T, R>
+  extends ProcessStep_<T, R>
   implements ITransformInput<T, R>, ICompose<T, R>
 {
   constructor(transform: (input: T) => R) {
@@ -35,13 +35,13 @@ export class ProcessStepComposable<T, R>
 }
 
 export class Pipeline<T, R> {
-  private constructor(private steps: ProcessStep<any, any>[]) {}
+  private constructor(private steps: ProcessStep_<any, any>[]) {}
 
-  static initialize<T, R>(step: ProcessStep<T, R>): Pipeline<T, R> {
+  static initialize<T, R>(step: ProcessStep_<T, R>): Pipeline<T, R> {
     return new Pipeline([step]);
   }
 
-  appendStep<U>(step: ProcessStep<R, U>): Pipeline<T, U> {
+  appendStep<U>(step: ProcessStep_<R, U>): Pipeline<T, U> {
     const newSteps = [...this.steps, step];
     return new Pipeline(newSteps);
   }
@@ -55,7 +55,7 @@ export class Pipeline<T, R> {
 }
 
 export class NumericProcessStep
-  extends ProcessStep<number, number>
+  extends ProcessStep_<number, number>
   implements ITransformInput<number, number>
 {
   constructor(transform: (input: number) => number) {
@@ -144,8 +144,8 @@ type Json = typeof JSON;
 export type _Never_d2 = T_A76FBD2<{ item: 10 }>; // both same
 export type _Never_d = T_A76FBD<Json>; // both same
 
-const multiplyByTwo = new ProcessStep<number, number>(n => n * 2);
-const addOne = new ProcessStep<number, number>(n => n + 1);
+const multiplyByTwo = new ProcessStep_<number, number>(n => n * 2);
+const addOne = new ProcessStep_<number, number>(n => n + 1);
 
 const pipeline = Pipeline.initialize(multiplyByTwo).appendStep(addOne);
 
