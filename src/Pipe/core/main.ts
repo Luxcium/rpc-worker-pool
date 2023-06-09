@@ -1,17 +1,10 @@
 import { ProcessStep } from './classes/ProcessStep';
 
-export const somePseudoFunctor = ProcessStep.of((input: string) => input.length)
-  .map(tr => (input: string) => '-'.repeat(tr(input)))
-  .map(identity => identity);
+export const somePseudoFunctor = ProcessStep.of(
+  (input: string) => input.length
+).map(tr => (input: string) => '-'.repeat(tr(input)));
 
-export type HighLevelTransformer_A<
-  X = unknown,
-  Y = any,
-  I = any,
-  O = unknown
-> = (intrant: MapFunction<X, Y>) => MapFunction<I, O>;
-
-export type HighLevelTransformer_B<
+export type HighLevelTransformer<
   A,
   B,
   X,
@@ -23,12 +16,12 @@ export type MapFunction<P = any, Q = any> = (value: P) => Q;
 
 export const input_001: MapFunction<string, number> = (input: string) =>
   input.length;
-export const Fx: HighLevelTransformer_B<string, number, string, string> =
+export const Fx: HighLevelTransformer<string, number, string, string> =
   (intrantFN: (input: string) => number): ((input: string) => string) =>
   (input: string): string =>
     '-'.repeat(intrantFN(input));
 
-export const Gx: HighLevelTransformer_B<string, string, string, number> =
+export const Gx: HighLevelTransformer<string, string, string, number> =
   (intrantFN: (input: string) => string): ((input: string) => number) =>
   (input: string): number =>
     intrantFN(input).length;
@@ -57,3 +50,24 @@ EXPECTED:
 HELLO
 -----
  */
+
+export const chain: ProcessStep<string, string> = somePseudoFunctor.chain(
+  (input1: MapFunction<string, string>) =>
+    ProcessStep.of((input2: string) => input1(input2))
+);
+
+export const map: ProcessStep<string, string> = somePseudoFunctor.map(
+  (input1: MapFunction<string, string>) => (input2: string) => input1(input2)
+);
+
+export const ap = somePseudoFunctor.ap(
+  ProcessStep.of(
+    (input1: string) => (input2: MapFunction<string, string>) => input2(input1)
+  )
+);
+
+// ProcessStep.of());
+// ProcessStep<unknown, (input: MapFunction<string, string>) => unknown>
+// ProcessStep.of (input1: any) => (input2: any) => `${input1} ${input2}`
+// fn,: ProcessStep<unknown, (input: MapFunction<string, string>) => unknown>
+// chain, map, ap;

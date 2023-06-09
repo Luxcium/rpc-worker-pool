@@ -34,6 +34,25 @@ unwrapRpcRequest;
 unwrapRpcResponse;
 unwrapRpcResponseLeft;
 unwrapRpcResponseRight;
+// export const identityWrap = ProcessWrap.of(
+//   <R>([result, id, jsonrpc, rpcResponseRight]: [
+//     result: R,
+//     id: string | number | null,
+//     jsonrpc: boolean,
+//     rpcResponseRight: RpcRight<R>
+//   ]) => [result, id, jsonrpc, rpcResponseRight]
+// );
+// identityWrap.unWrap(preComposeWith);
+// identityWrap.unWrap(preComposeWith);
+
+// export const rpcErrorUnwrap = identityWrap.unWrap(unwrapRpcError);
+// export const rpcNotificationUnwrap = identityWrap.unWrap(unwrapRpcNotification);
+// export const rpcRequestUnwrap = identityWrap.unWrap(unwrapRpcRequest);
+// export const rpcResponseUnwrap = identityWrap.unWrap(unwrapRpcResponse);
+// export const rpcResponseLeftUnwrap = identityWrap.unWrap(unwrapRpcResponseLeft);
+// export const rpcResponseRightUnwrap = identityWrap.unWrap(
+//   unwrapRpcResponseRight
+// );
 
 // baseRpcResponseRight;
 // unwrapRpcResponseRight;
