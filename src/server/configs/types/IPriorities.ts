@@ -8,6 +8,5 @@ export interface IPriorities {
   threads: number;
   strategy_: string;
   strategy: Strategies;
-  scriptFileUri: string;
   runInDocker: boolean;
 }

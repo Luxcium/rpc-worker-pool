@@ -1,5 +1,3 @@
-import { existsSync } from 'node:fs';
-import { join } from 'node:path';
 import { getConfigs } from './getConfigs';
 
 export const priorities = getConfigs({
@@ -9,7 +7,4 @@ export const priorities = getConfigs({
   PORT: '7010',
   THREADS: 4,
   STRATEGY: 'roundrobin',
-  SCRIPT_FILE_URI: join(
-    `${__dirname}/worker.${existsSync(`${__dirname}/worker.ts`) ? 'ts' : 'js'}`
-  ),
 });

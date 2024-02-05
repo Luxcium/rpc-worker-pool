@@ -12,7 +12,6 @@ export function getConfigs({
   PORT,
   THREADS,
   STRATEGY,
-  SCRIPT_FILE_URI,
 }: IDefaultsConfigs): IPriorities {
   const env = getEnvConfigs();
   const args = getArgvConfigs();
@@ -36,7 +35,6 @@ export function getConfigs({
   const defPort = define(PORT);
   const defThreads = define(THREADS);
   const defStrategy = define(STRATEGY);
-  const defScriptFileUri = define(SCRIPT_FILE_URI);
 
   const httpEndpoint = defHttpEndPoint(env.httpEndpointEnv, httpEndpointParam);
   const httpPort = defHttpPort(env.httpPortEnv, httpPortParam);
@@ -45,10 +43,7 @@ export function getConfigs({
   const threads = Number(defThreads(`${env.threadsEnv}`, args.threadsParam));
   const strategy_ = String(defStrategy(env.strategyEnv, args.strategyParam));
   const strategy = isStrategy(strategy_) ? strategy_ : strategies.roundrobin;
-  const scriptFileUri = defScriptFileUri(
-    env.scriptFileEnv,
-    args.scriptFilePath
-  );
+
   return {
     httpEndpoint,
     httpPort,
@@ -57,7 +52,6 @@ export function getConfigs({
     threads,
     strategy_,
     strategy,
-    scriptFileUri,
     runInDocker: env.runInDockerFlag,
   };
 }
