@@ -4,7 +4,7 @@ import { existsSync } from 'node:fs';
 import { createServer as createHTTP_Server, ServerResponse } from 'node:http';
 import { join } from 'node:path';
 import RpcWorkerPool from './RpcWorkerPool';
-import { isStrategy, strategies } from './utils';
+import { isStrategy, Strategies, strategies } from './utils';
 import { error400, error500, error503 } from './utils/errorHttp';
 import { getRelativePaths } from './utils/getRelativePaths';
 import { getTcpServer } from './utils/getTcpServer';
@@ -15,103 +15,248 @@ const VERBOSE = false;
 
 // #region ++ Initialization ----------------------------------------↓
 // ## DEFAULTS VALUE ―――――――――――――――――――――――――――――――――――――――――――――――――
-const HTTP_ENDPOINT = '0.0.0.0';
-const HTTP_PORT = '8010';
-const ENDPOINT = '0.0.0.0';
-const PORT = '7010';
-const THREADS = 4;
-const STRATEGY = 'roundrobin';
-const SCRIPT_FILE_URI = join(
-  `${__dirname}/worker.${existsSync(`${__dirname}/worker.ts`) ? 'ts' : 'js'}`
-);
+// const HTTP_ENDPOINT = '0.0.0.0';
+// const HTTP_PORT = '8010';
+// const ENDPOINT = '0.0.0.0';
+// const PORT = '7010';
+// const THREADS = 4;
+// const STRATEGY = 'roundrobin';
+// const SCRIPT_FILE_URI = join(
+// `${__dirname}/worker.${existsSync(`${__dirname}/worker.ts`) ? 'ts' : 'js'}`
+// );
+interface IDefaultsConfigs {
+  HTTP_ENDPOINT: string;
+  HTTP_PORT: string;
+  ENDPOINT: string;
+  PORT: string;
+  THREADS: number;
+  STRATEGY: string;
+  SCRIPT_FILE_URI: string;
+}
+export function getDefaultConfigs(): IDefaultsConfigs {
+  return {
+    HTTP_ENDPOINT: '0.0.0.0',
+    HTTP_PORT: '8010',
+    ENDPOINT: '0.0.0.0',
+    PORT: '7010',
+    THREADS: 4,
+    STRATEGY: 'roundrobin',
+    SCRIPT_FILE_URI: join(
+      `${__dirname}/worker.${existsSync(`${__dirname}/worker.ts`) ? 'ts' : 'js'}`
+    ),
+  };
+}
+const defaultConf = getDefaultConfigs();
 
 // ## WILL PREFRE ENV IN DOCKER CONTAINER ――――――――――――――――――――――――――――
-const httpEndpointEnv = process.env['HTTP_ENDPOINT']; //  export HTTP_ENDPOINT='0.0.0.0'
-const httpPortEnv = process.env['HTTP_PORT']; //  export HTTP_PORT='8010'
-const endpointEnv = process.env['ACTOR_ENDPOINT']; //  export ACTOR_ENDPOINT='0.0.0.0'
-const portEnv = process.env['ACTOR_PORT']; //  export ACTOR_PORT='7010'
-const threadsEnv = process.env['ACTOR_THREADS']; //  export ACTOR_THREADS=4
-const strategyEnv = process.env['ACTOR_STRATEGY']; //  export ACTOR_STRATEGY='roundrobin'
-const scriptFileEnv = process.env['SCRIPT_FILE_URI']; //  export SCRIPT_FILE_URI=
-
+// const httpEndpointEnv = process.env['HTTP_ENDPOINT']; //  export HTTP_ENDPOINT='0.0.0.0'
+// const httpPortEnv = process.env['HTTP_PORT']; //  export HTTP_PORT='8010'
+// const endpointEnv = process.env['ACTOR_ENDPOINT']; //  export ACTOR_ENDPOINT='0.0.0.0'
+// const portEnv = process.env['ACTOR_PORT']; //  export ACTOR_PORT='7010'
+// const threadsEnv = process.env['ACTOR_THREADS']; //  export ACTOR_THREADS=4
+// const strategyEnv = process.env['ACTOR_STRATEGY']; //  export ACTOR_STRATEGY='roundrobin'
+// const scriptFileEnv = process.env['SCRIPT_FILE_URI']; //  export SCRIPT_FILE_URI=
+interface IEnvConfigs {
+  httpEndpointEnv: string;
+  httpPortEnv: string;
+  endpointEnv: string;
+  portEnv: string;
+  threadsEnv: number;
+  strategyEnv: string;
+  scriptFileEnv: string;
+  runInDockerFlag: boolean;
+}
+export function getEnvConfigs(): IEnvConfigs {
+  return {
+    httpEndpointEnv: process.env['HTTP_ENDPOINT'] || '',
+    httpPortEnv: process.env['HTTP_PORT'] || '',
+    endpointEnv: process.env['ACTOR_ENDPOINT'] || '',
+    portEnv: process.env['ACTOR_PORT'] || '',
+    threadsEnv: parseInt(`${process.env['ACTOR_THREADS']}`) || 0,
+    strategyEnv: process.env['ACTOR_STRATEGY'] || '',
+    scriptFileEnv: process.env['SCRIPT_FILE_URI'] || '',
+    runInDockerFlag: process.env['RUNNING_IN_DOCKER'] === 'true',
+  };
+}
+const env = getEnvConfigs();
+interface IArgsConfigs {
+  argv0: string;
+  argv1: string;
+  httpConnParam: string;
+  connecParam: string;
+  threadsParam: string;
+  strategyParam: string;
+  scriptFileParam: string;
+  splits: {
+    httpEndpointParam: string;
+    httpPortParam: string;
+    endpointParam: string;
+    portParam: string;
+  };
+}
 // ## WILL PREFRE ARGV WHEN COMMAND LINE INVOQUATION ―――――――――――――――――
-const [
-  argv0,
-  argv1,
-  httpConnParam,
-  connecParam,
-  threadsParam,
-  strategyParam,
-  scriptFileParam,
-] = process.argv;
-const [httpEndpointParam, httpPortParam] = (httpConnParam || '').split(':');
-const [endpointParam, portParam] = (connecParam || '').split(':');
-const runInDocker = process.env['RUNNING_IN_DOCKER'] === 'true';
-
+export function getArgvConfigs(): IArgsConfigs {
+  const [
+    argv0,
+    argv1,
+    httpConnParam,
+    connecParam,
+    threadsParam,
+    strategyParam,
+    scriptFileParam,
+  ] = process.argv;
+  const [httpEndpointParam, httpPortParam] = (httpConnParam || '').split(':');
+  const [endpointParam, portParam] = (connecParam || '').split(':');
+  return {
+    argv0,
+    argv1,
+    httpConnParam,
+    connecParam,
+    threadsParam,
+    strategyParam,
+    scriptFileParam,
+    splits: {
+      httpEndpointParam,
+      httpPortParam,
+      endpointParam,
+      portParam,
+    },
+  };
+}
 // ## WILL SET PRIORRITY ―――――――――――――――――――――――――――――――――――――――――――――
-const inDocker =
-  (isInDocker: boolean) =>
-  <T>(e?: T, a?: T) =>
-    isInDocker ? e || a : a || e;
-const priority = inDocker(runInDocker);
-
-// ## WILL DEFINE PRIORRITY ――――――――――――――――――――――――――――――――――――――――――
-const define =
-  <T>(defaultValue: T | string) =>
-  (env?: T | string, arg?: T | string) =>
-    priority(env, arg) || defaultValue;
-
-const defHttpEndPoint = define(HTTP_ENDPOINT);
-const defHttpPort = define(HTTP_PORT);
-const defEndPoint = define(ENDPOINT);
-const defPort = define(PORT);
-const defThreads = define(THREADS);
-const defStrategy = define(STRATEGY);
-const defScriptFileUri = define(SCRIPT_FILE_URI);
-
-const defaults_ = {
-  PORT,
+export function getpriorities({
+  HTTP_ENDPOINT,
   HTTP_PORT,
   ENDPOINT,
-  HTTP_ENDPOINT,
+  PORT,
   THREADS,
   STRATEGY,
   SCRIPT_FILE_URI,
-};
-const envs_ = {
-  httpEndpointEnv: httpEndpointEnv,
-  httpPortEnv: httpPortEnv,
-  endpointEnv: endpointEnv,
-  portEnv: portEnv,
-  threadsEnv: threadsEnv,
-  strategyEnv: strategyEnv,
-  scriptFileEnv: scriptFileEnv,
-};
-const args_ = {
-  argv0,
-  argv1,
-  httpConnParam,
-  connecParam,
-  threadsParam,
-  strategyParam,
-  scriptFileParam,
-  splits: {
-    httpEndpointParam,
-    httpPortParam,
-    endpointParam,
-    portParam,
-  },
-};
+}: IDefaultsConfigs): IPriorities {
+  const env = getEnvConfigs();
+  const args = getArgvConfigs();
+  const { httpEndpointParam, httpPortParam, endpointParam, portParam } =
+    args.splits;
+  const inDocker =
+    (isInDocker: boolean) =>
+    <T>(e?: T, a?: T) =>
+      isInDocker ? e || a : a || e;
+  const priority = inDocker(env.runInDockerFlag);
+
+  // ## WILL DEFINE PRIORRITY ――――――――――――――――――――――――――――――――――――――――――
+  const define =
+    <T>(defaultValue: T | string) =>
+    (env?: T | string, arg?: T | string) =>
+      priority(env, arg) || defaultValue;
+
+  const defHttpEndPoint = define(HTTP_ENDPOINT);
+  const defHttpPort = define(HTTP_PORT);
+  const defEndPoint = define(ENDPOINT);
+  const defPort = define(PORT);
+  const defThreads = define(THREADS);
+  const defStrategy = define(STRATEGY);
+  const defScriptFileUri = define(SCRIPT_FILE_URI);
+
+  const httpEndpoint = defHttpEndPoint(env.httpEndpointEnv, httpEndpointParam);
+  const httpPort = defHttpPort(env.httpPortEnv, httpPortParam);
+  const actorEndpoint = defEndPoint(env.endpointEnv, endpointParam);
+  const actorPort = defPort(env.portEnv, portParam);
+  const threads = Number(defThreads(`${env.threadsEnv}`, args.threadsParam));
+  const strategy_ = String(defStrategy(env.strategyEnv, args.strategyParam));
+  const strategy = isStrategy(strategy_) ? strategy_ : strategies.roundrobin;
+  const scriptFileUri = defScriptFileUri(
+    env.scriptFileEnv,
+    args.scriptFileParam
+  );
+  return {
+    httpEndpoint,
+    httpPort,
+    actorEndpoint,
+    actorPort,
+    threads,
+    strategy_,
+    strategy,
+    scriptFileUri,
+    runInDocker: env.runInDockerFlag,
+  };
+}
+export interface IPriorities {
+  httpEndpoint: string;
+  httpPort: string;
+  actorEndpoint: string;
+  actorPort: string;
+  threads: number;
+  strategy_: string;
+  strategy: Strategies;
+  scriptFileUri: string;
+  runInDocker: boolean;
+}
+const priorities = getpriorities({
+  HTTP_ENDPOINT: '0.0.0.0',
+  HTTP_PORT: '8010',
+  ENDPOINT: '0.0.0.0',
+  PORT: '7010',
+  THREADS: 4,
+  STRATEGY: 'roundrobin',
+  SCRIPT_FILE_URI: join(
+    `${__dirname}/worker.${existsSync(`${__dirname}/worker.ts`) ? 'ts' : 'js'}`
+  ),
+});
+const {
+  httpEndpoint,
+  httpPort,
+  actorEndpoint,
+  actorPort,
+  threads,
+  strategy_,
+  strategy,
+  scriptFileUri,
+  runInDocker,
+} = priorities;
+// const httpEndpoint = defHttpEndPoint(httpEndpointEnv, httpEndpointParam);
+// const httpPort = defHttpPort(httpPortEnv, httpPortParam);
+// const actorEndpoint = defEndPoint(endpointEnv, endpointParam);
+// const actorPort = defPort(portEnv, portParam);
+// const threads = Number(defThreads(`${threadsEnv}`, threadsParam));
+// const strategy_ = String(defStrategy(strategyEnv, strategyParam));
+// const strategy = isStrategy(strategy_) ? strategy_ : strategies.roundrobin;
+// const scriptFileUri = defScriptFileUri(scriptFileEnv, scriptFileParam);
+// const defaults_ = {
+//   PORT,
+//   HTTP_PORT,
+//   ENDPOINT,
+//   HTTP_ENDPOINT,
+//   THREADS,
+//   STRATEGY,
+//   SCRIPT_FILE_URI,
+// };
+// const envs_ = {
+//   httpEndpointEnv: httpEndpointEnv,
+//   httpPortEnv: httpPortEnv,
+//   endpointEnv: endpointEnv,
+//   portEnv: portEnv,
+//   threadsEnv: threadsEnv,
+//   strategyEnv: strategyEnv,
+//   scriptFileEnv: scriptFileEnv,
+// };
+// const args_ = {
+//   argv0,
+//   argv1,
+//   httpConnParam,
+//   connecParam,
+//   threadsParam,
+//   strategyParam,
+//   scriptFileParam,
+//   splits: {
+//     httpEndpointParam,
+//     httpPortParam,
+//     endpointParam,
+//     portParam,
+//   },
+// };
 
 // ## WILL DEFINE VALUES ―――――――――――――――――――――――――――――――――――――――――――――
-const httpEndpoint = defHttpEndPoint(httpEndpointEnv, httpEndpointParam);
-const httpPort = defHttpPort(httpPortEnv, httpPortParam);
-const actorEndpoint = defEndPoint(endpointEnv, endpointParam);
-const actorPort = defPort(portEnv, portParam);
-const threads = Number(defThreads(threadsEnv, threadsParam));
-const strategy_ = String(defStrategy(strategyEnv, strategyParam));
-const strategy = isStrategy(strategy_) ? strategy_ : strategies.roundrobin;
-const scriptFileUri = defScriptFileUri(scriptFileEnv, scriptFileParam);
+
 // #endregion ++ Initialization -------------------------------------↑
 // #region ++ CREATE POOL INSTANCES ---------------------------------↓
 // ## WILL CREATE WORKER POOL INSTANCE ―――――――――――――――――――――――――――――――
@@ -261,7 +406,7 @@ export function getHttpServer() {
             strategy,
             scriptFileUri,
           };
-          console.log('envs_', JSON.stringify({ ...envs_ }), envs_);
+          console.log('envs_', JSON.stringify({ ...env }), env);
 
           serverResponse(res)(200, 'OK', 'string').end(
             JSON.stringify({
@@ -269,10 +414,10 @@ export function getHttpServer() {
               id: elementCounter.messageSeq,
               result: {
                 paths,
-                worker_path: SCRIPT_FILE_URI,
-                DEFAULTS: defaults_,
-                ENVs: envs_,
-                ARGs: args_,
+                worker_path: scriptFileUri,
+                DEFAULTS: defaultConf,
+                ENVs: env,
+                ARGs: args,
                 isInDocker: runInDocker,
                 definedValues,
                 pid: 'server: ' + process.pid,
