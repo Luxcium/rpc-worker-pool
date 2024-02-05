@@ -86,21 +86,6 @@ export class RpcWorkerPool implements WorkerPool, WorkerPoolRpc {
     strategy: Strategies,
     verbosity?: false | true
   );
-  /**
-   * Creates a new RpcWorkerPool object.
-   * @param pathURI - The file path of the worker thread code.
-   * @param size - The number of worker threads to create. Defaults to the number of CPU cores.
-   * @param strategy - The strategy used to allocate tasks to worker threads. Defaults to 'leastbusy'.
-   * @param verbosity - A boolean indicating whether logging is enabled. Defaults to false.
-   * When logging is enabled, the pool will log messages to the console.
-   * @deprecated
-   */
-  constructor(
-    pathURI: string,
-    size: number,
-    strategy: Strategies,
-    verbosity?: false | true
-  );
   constructor(
     pathURI: string | null,
     size: number = 0,

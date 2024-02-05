@@ -1,8 +1,6 @@
-import { existsSync } from 'node:fs';
-import { join } from 'node:path';
 import { IDefaultsConfigs } from './types/IDefaultsConfigs';
 
-export function getDefaultConfigs(dirname: string): IDefaultsConfigs {
+export function getDefaultConfigs(): IDefaultsConfigs {
   return {
     HTTP_ENDPOINT: '0.0.0.0',
     HTTP_PORT: '8010',
@@ -10,8 +8,5 @@ export function getDefaultConfigs(dirname: string): IDefaultsConfigs {
     PORT: '7010',
     THREADS: 4,
     STRATEGY: 'roundrobin',
-    SCRIPT_FILE_URI: join(
-      `${dirname}/worker.${existsSync(`${dirname}/worker.ts`) ? 'ts' : 'js'}`
-    ),
   };
 }

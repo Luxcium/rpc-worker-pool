@@ -12,7 +12,7 @@ import { getDefaultConfigs } from './configs/getDefaultConfigs';
 import { priorities } from './configs/priorities';
 
 const VERBOSE = false;
-const defaultConf = getDefaultConfigs(__dirname);
+const defaultConf = getDefaultConfigs();
 const env = getEnvConfigs();
 const {
   httpEndpoint,
@@ -22,12 +22,11 @@ const {
   threads,
   strategy_,
   strategy,
-  scriptFileUri,
   runInDocker,
 } = priorities;
 // #region ++ CREATE POOL INSTANCES ---------------------------------↓
 // ## WILL CREATE WORKER POOL INSTANCE ―――――――――――――――――――――――――――――――
-const workerPool = new RpcWorkerPool(scriptFileUri, threads, strategy, VERBOSE);
+const workerPool = new RpcWorkerPool(null, threads, strategy, VERBOSE);
 const elementCounter = { messageSeq: 0, actorTracking: 0 };
 const messageMap = new Map<number, ServerResponse>();
 type Data = { messageSeq: number; command_name: string; args: string[] };
@@ -170,7 +169,6 @@ export function getHttpServer() {
             threads,
             strategy_,
             strategy,
-            scriptFileUri,
           };
           console.log('envs_', JSON.stringify({ ...env }), env);
 
@@ -180,7 +178,6 @@ export function getHttpServer() {
               id: elementCounter.messageSeq,
               result: {
                 paths,
-                worker_path: scriptFileUri,
                 DEFAULTS: defaultConf,
                 ENVs: env,
                 ARGs: args,

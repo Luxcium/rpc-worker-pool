@@ -5,5 +5,4 @@ export interface IDefaultsConfigs {
   PORT: string;
   THREADS: number;
   STRATEGY: string;
-  SCRIPT_FILE_URI: string;
 }
