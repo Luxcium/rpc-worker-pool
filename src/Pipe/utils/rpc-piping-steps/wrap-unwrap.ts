@@ -15,7 +15,7 @@ import {
   unwrapRpcResponse,
   unwrapRpcResponseLeft,
   unwrapRpcResponseRight,
-} from '../../../API';
+} from '../../../server/API';
 import { ProcessStep } from '../../core/classes/ProcessStep';
 import { ProcessWrap } from '../../core/classes/bases/ProcessableWrapedStep';
 

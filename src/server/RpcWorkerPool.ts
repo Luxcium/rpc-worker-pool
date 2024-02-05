@@ -3,7 +3,7 @@ import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { Worker } from 'node:worker_threads';
 import { cpus } from 'os';
-import { baseRpcResponseRight } from '../API/RPC-serialise';
+import { baseRpcResponseRight } from './API/RPC-serialise';
 import {
   RpcRequest,
   RpcResponse,
@@ -82,12 +82,6 @@ export class RpcWorkerPool implements WorkerPool, WorkerPoolRpc {
    */
   constructor(
     pathURI: null,
-    size: number,
-    strategy: Strategies,
-    verbosity?: false | true
-  );
-  constructor(
-    pathURI: string | null,
     size: number = 0,
     strategy: Strategies = strategies.leastbusy,
     verbosity = false

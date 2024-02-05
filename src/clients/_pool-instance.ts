@@ -1,6 +1,5 @@
 import { delay, range } from '@luxcium/tools';
-import chalk from 'chalk';
-import { baseRpcRequest } from '../API/RPC-serialise';
+import { rpcRequestMethodHandler } from 'src/server/API/baseRpcRequest';
 import RpcWorkerPool from '../server/RpcWorkerPool';
 import { isStrategy, strategies } from '../server/utils';
 import {
@@ -15,14 +14,13 @@ void (async function MAIN({ threads }: { threads: number }) {
   const workerPool = new RpcWorkerPool(null, threads, strategy);
   await delay();
   const from = 10;
-  const to = 89;
+  const to = 10;
   const testRequests: number[] = range(from, to);
-
   const delaysAndLoads: ArgsTuple = [
-    '0',
-    '0',
-    '5440',
-    '5440',
+    '10000',
+    '10000',
+    '5',
+    '5',
     '0',
     '0',
     'true',
@@ -32,15 +30,18 @@ void (async function MAIN({ threads }: { threads: number }) {
     'command_name: hello-world',
   ];
 
-  const helloWorldRpcRequest = baseRpcRequest('hello-world');
-  const helloWorldRequest = helloWorldRpcRequest(delaysAndLoads);
+  const helloWorldRpcRequestTakesParameters =
+    rpcRequestMethodHandler('hello-world');
+
+  const helloWorldRequestTakesID =
+    helloWorldRpcRequestTakesParameters(delaysAndLoads);
   const helloWorldWorkerRpc = async (i: number) => {
     const $ = workerPool.execRpc<HelloWorldWorkerResultRpc>(
-      helloWorldRequest(i)
+      helloWorldRequestTakesID(i)
     );
     await $;
     console.log(
-      chalk.yellow('Received back from worker @helloWorldWorkerResult→')
+      '\x1b[33mReceived back from worker @helloWorldWorkerResult→\x1b[0m'
     );
     console.dir(
       {
@@ -54,4 +55,4 @@ void (async function MAIN({ threads }: { threads: number }) {
   await Promise.all(testRequests.map(helloWorldWorkerRpc));
 
   return process.exit(0);
-})({ threads: 20 });
+})({ threads: 1 });

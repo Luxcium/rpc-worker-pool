@@ -1,8 +1,8 @@
 import { RPC_ERRORS_FNS } from './RPC-errors';
+export { rpcRequestMethodHandler as baseRpcRequest } from './baseRpcRequest';
 
 export {
   baseRpcNotification,
-  baseRpcRequest,
   baseRpcResponseError,
   baseRpcResponseLeft,
   baseRpcResponseRight,

@@ -1,11 +1,11 @@
 import {
-  baseRpcRequest,
   baseRpcResponseLeft,
   baseRpcResponseRight,
   unwrapRpcRequest,
   unwrapRpcResponseLeft,
   unwrapRpcResponseRight,
-} from '../../API/RPC-serialise';
+} from '../../server/API/RPC-serialise';
+import { rpcRequestMethodHandler } from 'src/server/API/baseRpcRequest';
 import { RpcRequest, RpcResponse } from '../../types/specs';
 export type WorkerNumber = `{ workerNumber: ${number} }`;
 
@@ -20,7 +20,7 @@ export function createRpcConnector<P extends Array<any>, R>(method: string) {
   const createRequest = (params: P): RpcRequest<P> => {
     // TODO: Implement this function
     const requestId = generateRequestId();
-    return baseRpcRequest<P>(method)(params)(requestId);
+    return rpcRequestMethodHandler<P>(method)(params)(requestId);
   };
 
   // Function 2: Validate a request

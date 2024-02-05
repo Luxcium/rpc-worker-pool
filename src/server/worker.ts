@@ -3,7 +3,7 @@
 // #!! Consumed by the RpcWorkerPool class via path the to this file.
 
 import { parentPort, threadId, workerData } from 'node:worker_threads';
-import { INTERNAL_ERROR, swapRpcId } from '../API';
+import { INTERNAL_ERROR, swapRpcId } from './API';
 import { methods } from '../commands';
 import { getParams } from '../commands/tools/getParams';
 import { IdsObject } from '../types';

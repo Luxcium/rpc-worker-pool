@@ -1,7 +1,7 @@
 import { delay, heavyTask, timeStamp } from '@luxcium/tools';
 import { DelayValue, TaskValue } from '@luxcium/tools/lib/typings/delay/delay';
 import chalk from 'chalk';
-import { APPLICATION_ERROR } from '../API';
+import { APPLICATION_ERROR } from '../server/API';
 import type { IdsObject, RpcLeft, RpcRequest, RpcRight } from '../types';
 import { Methods } from '../types/Methods';
 import { getParams } from './tools/getParams';

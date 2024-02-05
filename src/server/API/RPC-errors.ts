@@ -6,7 +6,7 @@
  * @param data
  */
 
-import { RpcRight } from '../types';
+import { RpcRight } from '../../types';
 
 const PARSE_ERROR = (id: string | number | null, data: any) => ({
   jsonrpc: '2.0' as const,
@@ -159,7 +159,7 @@ export function unwrapRpcResponseRight<R = unknown>(
   result: R,
   id: string | number | null,
   isJsonRpc: boolean,
-  originalResponse: RpcRight<R>
+  originalResponse: RpcRight<R>,
 ] {
   const { result, id, jsonrpc } = response;
   return [result, id, jsonrpc === '2.0', response];
