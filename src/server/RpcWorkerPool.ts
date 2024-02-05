@@ -132,8 +132,10 @@ export class RpcWorkerPool implements WorkerPool, WorkerPoolRpc {
       });
     }
   }
-  async execRpc<R = unknown>(rpcRequest: RpcRequest<string[]>): Promise<R> {
-    return this.exec<R>(
+  async execRpc<ResultsType = unknown>(
+    rpcRequest: RpcRequest<string[]>
+  ): Promise<ResultsType> {
+    return this.exec<ResultsType>(
       rpcRequest.method,
       Number(rpcRequest.id),
       ...(rpcRequest.params || [])

@@ -72,7 +72,10 @@ export interface RpcNotification<N extends Array<any> | Record<string, any>> {
  * @see {@link https://www.jsonrpc.org/specification}
  *
  */
-export interface RpcRequest<P extends Array<any> | Record<string, any>> {
+
+export interface RpcRequest<
+  P extends Array<unknown> | Record<string, unknown>,
+> {
   /**
    * A String specifying the version of the JSON-RPC protocol. MUST be exactly "2.0".
    */

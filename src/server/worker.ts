@@ -66,6 +66,7 @@ function errorHandler(msg: string, error: unknown) {
     error
   );
 }
+
 const workerAsset = workerData.workerAsset;
 console.log(
   `WORKER(${threadId - 1}):${

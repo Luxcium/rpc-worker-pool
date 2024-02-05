@@ -31,10 +31,10 @@ void (async function MAIN({ threads }: { threads: number }) {
   ];
 
   const helloWorldRpcRequestTakesParameters =
-    rpcRequestMethodHandler('hello-world');
+    rpcRequestMethodHandler<ArgsTuple>('hello-world');
 
   const helloWorldRequestTakesID =
-    helloWorldRpcRequestTakesParameters(delaysAndLoads);
+    helloWorldRpcRequestTakesParameters<ArgsTuple>(delaysAndLoads);
   const helloWorldWorkerRpc = async (i: number) => {
     const $ = workerPool.execRpc<HelloWorldWorkerResultRpc>(
       helloWorldRequestTakesID(i)
@@ -53,6 +53,5 @@ void (async function MAIN({ threads }: { threads: number }) {
   };
 
   await Promise.all(testRequests.map(helloWorldWorkerRpc));
-
   return process.exit(0);
 })({ threads: 1 });
