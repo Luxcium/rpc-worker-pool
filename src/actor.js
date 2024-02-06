@@ -30,7 +30,7 @@ const [, , connecParam, threadsParam, strategyParam, scriptFileParam] =
 const [endpointParam, portParam] = (connecParam || '').split(':');
 
 // ## WILL SET PRIORRITY ―――――――――――――――――――――――――――――――――――――――――――――
-const inDocker = isInDocker => (e, a) => isInDocker ? e || a : a || e;
+const inDocker = isInDocker => (e, a) => (isInDocker ? e || a : a || e);
 const priority = inDocker(process.env.RUNNING_IN_DOCKER === 'true');
 
 // ## WILL DEFINE PRIORRITY ――――――――――――――――――――――――――――――――――――――――――

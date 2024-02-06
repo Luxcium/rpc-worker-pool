@@ -11,9 +11,9 @@ export interface WorkerPoolRpc {
 } // RpcRequest
 
 interface WorkerPoolExecRpcRequest {
-  <O = unknown>(rpcRequest: RpcRequest<string[]>): Promise<
-    RpcResponse<O, unknown>
-  >;
+  <O = unknown>(
+    rpcRequest: RpcRequest<string[]>
+  ): Promise<RpcResponse<O, unknown>>;
 }
 export interface WorkerPoolExec {
   <O = unknown>(

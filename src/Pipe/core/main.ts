@@ -10,7 +10,7 @@ export type HighLevelTransformer<
   X,
   Y,
   I extends MapFunction<A, B> = MapFunction<A, B>,
-  O extends MapFunction<X, Y> = MapFunction<X, Y>
+  O extends MapFunction<X, Y> = MapFunction<X, Y>,
 > = (intrant: I) => O;
 export type MapFunction<P = any, Q = any> = (value: P) => Q;
 

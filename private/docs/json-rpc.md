@@ -93,7 +93,7 @@ When a rpc call is made, the Server MUST reply with a Response, except for in th
 ```jsonc
 {
   "jsonrpc": "2.0",
-  "id": 42
+  "id": 42,
 }
 ```
 

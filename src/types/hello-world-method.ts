@@ -17,7 +17,7 @@ export type ArgsTuple = [
   delay: BooleanString,
   range: Range,
   threads: Threads,
-  commandName: CommandName
+  commandName: CommandName,
 ];
 /**
  * This interface is used to represent the performance result of an

@@ -3,10 +3,10 @@
 // #!! Consumed by the RpcWorkerPool class via path the to this file.
 
 import { parentPort, threadId, workerData } from 'node:worker_threads';
-import { INTERNAL_ERROR } from './API';
 import { methods } from '../commands';
 import { IdsObject } from '../types';
 import { RpcRequest, RpcResponse } from '../types/specs';
+import { INTERNAL_ERROR } from './API';
 import { asyncOnMessageWrap } from './job/asyncOnMessageWrap';
 import { errorHandler } from './job/errorHandler';
 
@@ -30,6 +30,7 @@ console.log(
         ): Promise<RpcResponse<unknown>> => {
           const { method } = rpcRequest;
           try {
+            // ++ Is awaited here to catch any errors.
             const resultRPC = await methods[method](rpcRequest);
             return resultRPC;
           } catch (error) {

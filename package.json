@@ -6,6 +6,8 @@
   "types": "dist/typings/index.d.ts",
   "scripts": {
     "build": "(npm test && bash scripts/build.sh) || exit 15",
+    "prettier": "prettier --write .",
+    "lint": "eslint --fix ./src",
     "install": "pwd; yarn build || exit 13; pwd",
     "deploy:local": "cp package.json ./docker/package.json; npm run build && npm run docker:build",
     "docker:build": "docker build --progress plain --label 'image:rpc-worker-pool' --tag rpc-worker-pool:latest ./docker",
