@@ -1,0 +1,6 @@
+node_modules/
+*.test.ts
+lib
+dist
+docs
+.eslintrc.cjs
