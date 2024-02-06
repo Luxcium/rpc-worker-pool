@@ -1,8 +1,9 @@
 import { delay, range } from '@luxcium/tools';
 import { rpcRequestMethodHandler } from 'src/server/API/baseRpcRequest';
+
 import RpcWorkerPool from '../server/RpcWorkerPool';
 import { isStrategy, strategies } from '../server/utils';
-import {
+import type {
   ArgsTuple,
   HelloWorldWorkerResultRpc,
 } from '../types/hello-world-method';
@@ -41,7 +42,7 @@ void (async function MAIN({ threads }: { threads: number }) {
     );
     await $;
     console.log(
-      '\x1b[33mReceived back from worker @helloWorldWorkerResult→\x1b[0m'
+      '\u001B[33mReceived back from worker @helloWorldWorkerResult→\u001B[0m'
     );
     console.dir(
       {

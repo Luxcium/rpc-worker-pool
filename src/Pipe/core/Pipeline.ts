@@ -1,4 +1,4 @@
-import { ProcessStep } from './classes/ProcessStep';
+import type { ProcessStep } from './classes/ProcessStep';
 
 export class Pipeline<T, R> {
   private constructor(private readonly steps: ProcessStep<any, any>[]) {}
@@ -13,9 +13,9 @@ export class Pipeline<T, R> {
   }
 
   process(input: T): R {
-    return this.steps.reduce(
+    return this.steps.reduce<any>(
       (value, step) => step.transformInput(value),
-      input as any
+      input
     ) as R;
   }
 }

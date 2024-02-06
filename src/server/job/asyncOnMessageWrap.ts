@@ -1,14 +1,15 @@
 'use strict';
-import { IdsObject } from '../../types';
-import { RpcRequest } from '../../types/specs';
-import { getParams } from '../../commands/tools/getParams';
-import { RpcResponse } from '../../types/specs';
 import { parentPort } from 'node:worker_threads';
+
+import { getParams } from '../../commands/tools/getParams';
+import type { IdsObject } from '../../types';
+import type { RpcRequest, RpcResponse } from '../../types/specs';
 import { swapRpcId } from '../API';
 import { errorHandler } from './errorHandler';
 
 export function asyncOnMessageWrap(fn: Fn) {
-  return (msg: RpcRequest<[IdsObject, ...string[]]>) => messageWrap(fn, msg);
+  return async (msg: RpcRequest<[IdsObject, ...string[]]>) =>
+    messageWrap(fn, msg);
 }
 export type Fn = (
   msg: RpcRequest<[IdsObject, ...string[]]>
@@ -19,7 +20,9 @@ export async function messageWrap(
   msg: RpcRequest<[IdsObject, ...string[]]>
 ) {
   try {
-    if (!parentPort) throw new Error('parentPort is undefined');
+    if (!parentPort) {
+      throw new Error('parentPort is undefined');
+    }
     const [{ external_message_identifier }] = getParams(msg);
     const currentId = swapRpcId(external_message_identifier, msg);
     const result: RpcResponse<unknown> = await fn(msg);

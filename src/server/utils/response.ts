@@ -1,10 +1,11 @@
-import { IncomingMessage, ServerResponse } from 'http';
+import type { ServerResponse } from 'http';
+
 import { serverResponse } from './serverResponse';
 
 export function response(
   data: any,
   reply: string,
-  messageMap: Map<number, ServerResponse<IncomingMessage>>
+  messageMap: Map<number, ServerResponse>
 ) {
   // HACK: Skiped null check may be not assignable to parameter ------
   const writeHead = serverResponse(messageMap.get(data.id)!);

@@ -4,9 +4,11 @@ export abstract class ProcessableStep<T, R>
   implements IGetTransform<T, R>, IUnbox<MapFunction<T, R>>
 {
   constructor(protected _transform: MapFunction<T, R>) {}
+
   get transform(): MapFunction<T, R> {
     return this._transform;
   }
+
   unbox(): MapFunction<T, R> {
     return this._transform;
   }

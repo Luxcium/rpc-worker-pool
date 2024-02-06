@@ -1,4 +1,4 @@
-import {
+import type {
   ArgsTuple,
   BooleanString,
   CommandName,
@@ -30,7 +30,7 @@ export function isRange(value: string): value is Range {
 }
 
 export function isThreads(value: string): value is Threads {
-  return /^\{ threads\(workers\): \d+ \}$/.test(value);
+  return /^{ threads\(workers\): \d+ }$/.test(value);
 }
 
 export function isCommandName(value: string): value is CommandName {
@@ -42,7 +42,7 @@ export function isNumberString(value: string): value is NumberString {
 }
 
 export function isBooleanString(value: string): value is BooleanString {
-  return value === 'true' || value === 'false';
+  return 'true' === value || 'false' === value;
 }
 
 export function areLastThreeElementsCommandParams(

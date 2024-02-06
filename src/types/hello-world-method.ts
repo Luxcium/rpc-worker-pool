@@ -1,4 +1,4 @@
-import { RpcRight } from '.';
+import type { RpcRight } from '.';
 
 export type Range = `range(${number}, ${number})`;
 export type Threads = `{ threads(workers): ${number} }`;
@@ -19,6 +19,7 @@ export type ArgsTuple = [
   threads: Threads,
   commandName: CommandName,
 ];
+
 /**
  * This interface is used to represent the performance result of an
  * operation.
@@ -64,7 +65,8 @@ export interface HelloWorldWorkerResultRpc extends RpcRight<Result> {
 
 export interface HelloWorldWorker {
   '@helloWorldWorkerResult→':
-    | Promise<HelloWorldWorkerResultRpc>
-    | Awaited<HelloWorldWorkerResultRpc>;
+    | Awaited<HelloWorldWorkerResultRpc>
+    | Promise<HelloWorldWorkerResultRpc>;
 }
+
 // :-@-----------------------------------------------------------------------@―:

@@ -1,4 +1,4 @@
-import { IDefaultsConfigs } from './types/IDefaultsConfigs';
+import type { IDefaultsConfigs } from './types/IDefaultsConfigs';
 
 export function getDefaultConfigs(): IDefaultsConfigs {
   return {

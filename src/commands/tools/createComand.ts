@@ -19,7 +19,7 @@ export function createRPCRequest<T>(method: string, params: T): string {
  * @param result - The result from the invoked method or an error.
  * @returns The JSON-RPC response object as a string.
  */
-export function createRPCResponse<T>(result: T | Error): string {
+export function createRPCResponse<T>(result: Error | T): string {
   const rpcResponse =
     result instanceof Error
       ? { jsonrpc: '2.0', error: result.message }
@@ -43,7 +43,7 @@ export type Command<I, O> = {
   serializeAndSend: (payload: I) => Promise<string>;
   workerFunctionWrapper: (payload: I) => Promise<O>;
   deserializeAndHandleResponse: (response: string) => Promise<O>;
-  workerResponseWrapper: (response: O | Error) => Promise<string>;
+  workerResponseWrapper: (response: Error | O) => Promise<string>;
 };
 
 /**
@@ -62,6 +62,7 @@ export function createCommand<I, O>(
   return {
     commandName,
     description,
+
     // This function takes a payload, wraps it in a JSON-RPC request object, and serializes it to a string.
     serializeAndSend: async (payload: I) => {
       const rpcRequest = {
@@ -71,6 +72,7 @@ export function createCommand<I, O>(
       };
       return JSON.stringify(rpcRequest);
     },
+
     // This function wraps the main logic of the command. It takes a payload, runs the command with that payload, and returns the result. If the command throws an error, it wraps that error in a new Error object.
     workerFunctionWrapper: async (payload: I) => {
       try {
@@ -80,6 +82,7 @@ export function createCommand<I, O>(
         throw new Error(`Error in ${commandName}: ${error}`);
       }
     },
+
     // This function takes a serialized response, deserializes it to a JSON-RPC response object, checks for an error in the response, and returns the result or throws an error.
     deserializeAndHandleResponse: async (response: string) => {
       const rpcResponse = JSON.parse(response);
@@ -88,8 +91,9 @@ export function createCommand<I, O>(
       }
       return rpcResponse.result as O;
     },
+
     // This function takes a response or an error, wraps it in a JSON-RPC response object, and serializes it to a string.
-    workerResponseWrapper: async (response: O | Error) => {
+    workerResponseWrapper: async (response: Error | O) => {
       const rpcResponse =
         response instanceof Error
           ? { jsonrpc: '2.0', error: response.message }
@@ -130,7 +134,7 @@ export function createCommand_<I, O>(
       }
       return rpcResponse.result as O;
     },
-    workerResponseWrapper: async (response: O | Error) => {
+    workerResponseWrapper: async (response: Error | O) => {
       const rpcResponse =
         response instanceof Error
           ? { jsonrpc: '2.0', error: response.message }

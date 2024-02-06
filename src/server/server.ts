@@ -1,15 +1,18 @@
 #!/usr/bin/env node
+import type { ServerResponse } from 'node:http';
+import { createServer as createHTTP_Server } from 'node:http';
+
 import chalk from 'chalk';
-import { createServer as createHTTP_Server, ServerResponse } from 'node:http';
+
+import { getDefaultConfigs } from './configs/getDefaultConfigs';
+import { getEnvConfigs } from './configs/getEnvConfigs';
+import { priorities } from './configs/priorities';
 import RpcWorkerPool from './RpcWorkerPool';
 import { error400, error500, error503 } from './utils/errorHttp';
 import { getRelativePaths } from './utils/getRelativePaths';
 import { getTcpServer } from './utils/getTcpServer';
 import { response } from './utils/response';
 import { serverResponse } from './utils/serverResponse';
-import { getEnvConfigs } from './configs/getEnvConfigs';
-import { getDefaultConfigs } from './configs/getDefaultConfigs';
-import { priorities } from './configs/priorities';
 
 const VERBOSE = false;
 const defaultConf = getDefaultConfigs();
@@ -24,6 +27,7 @@ const {
   strategy,
   runInDocker,
 } = priorities;
+
 // #region ++ CREATE POOL INSTANCES ---------------------------------↓
 // ## WILL CREATE WORKER POOL INSTANCE ―――――――――――――――――――――――――――――――
 const workerPool = new RpcWorkerPool(null, threads, strategy, VERBOSE);
@@ -60,7 +64,7 @@ const primeActor = async (data: Data) => {
       actorTracking: elementCounter.actorTracking,
       performance: delay,
       referenceString: `${dateNow}:${data.messageSeq}@${process.pid}:${elementCounter.actorTracking}:${time}ms`,
-      [`${Date.now()}`]: Date(),
+      [`${Date.now()}`]: new Date(),
     };
     const httpReply = JSON.stringify({
       ...valueResult,
@@ -68,14 +72,14 @@ const primeActor = async (data: Data) => {
     });
 
     // Log performance information.
-    void console.log(
+    console.log(
       'actors.add!',
       {
         actor: 'Local',
         localPid: process.pid,
         ...metaData,
       },
-      'performance: ' + chalk.yellow(time) + ' ms'
+      `performance: ${chalk.yellow(time)} ms`
     );
 
     // End the http reponse with the message
@@ -85,6 +89,7 @@ const primeActor = async (data: Data) => {
   }
 };
 actorSet.add(primeActor);
+
 /**
  * Returns a randomly selected actor handler.
  * @returns An actor handler from the actors collection.
@@ -93,6 +98,7 @@ function randomActor() {
   const pool = [...actorSet];
   return pool[Math.floor(Math.random() * pool.length)];
 }
+
 // #endregion ++ CREATE POOL INSTANCES ------------------------------↑
 // #region ++ HTTP_Server -------------------------------------------↓
 /**
@@ -108,7 +114,7 @@ export function getHttpServer() {
   const HTTP_Server = createHTTP_Server((req, res): any => {
     elementCounter.messageSeq++;
     try {
-      if (actorSet.size === 0) {
+      if (0 === actorSet.size) {
         const reason = 'EMPTY ACTOR POOL';
         const description = 'No actors available to handle requests.';
         return error503(res, reason, description);
@@ -121,42 +127,49 @@ export function getHttpServer() {
 
       // Extract the command name, query string, and fragment identifier from the URL
       const fullUrl = new URL(
-        req?.url || '',
-        `http:${'//' + req.headers.host}`
+        req?.url ?? '',
+        `http:${`//${req.headers.host}`}`
       );
+
       // Split the path into segments and filter out empty strings
       const pathSegments = fullUrl.pathname.split('/').filter(Boolean);
 
       const destination = pathSegments.shift();
       const fullArgs = pathSegments;
+
       // Get the query string
       const queryString = fullUrl.search;
+
       // Get the fragment identifier
       const fragmentIdentifier = fullUrl.hash;
-      if (destination === 'worker') {
+      if ('worker' === destination) {
         // Remove and store the first segment as the command name
         const command_name = pathSegments.shift();
+
         // The remaining segments are the arguments
         const args = pathSegments;
 
         // Send the command and arguments, along with the query string and fragment identifier, to the selected actor
         actor({
           messageSeq: elementCounter.messageSeq,
-          command_name: command_name || '',
+          command_name: command_name ?? '',
           args,
+
           // args: { args, queryString, fragmentIdentifier },
         });
-      } else if (destination === 'server') {
+      } else if ('server' === destination) {
         // Remove and store the first segment as the command name
         const command_name = pathSegments.shift();
+
         // The remaining segments are the arguments
         const args = pathSegments;
+
         // Get the query string
         // const queryString = fullUrl.search;
         // Get the fragment identifier
         // const fragmentIdentifier = fullUrl.hash;
 
-        if (command_name === 'infos') {
+        if ('infos' === command_name) {
           const paths = getRelativePaths(
             '/projects/monorepo-one/rpc-worker-pool/docker/dist/server/worker.js',
             '/projects/monorepo-one/rpc-worker-pool/docker/dist/server/server.js'
@@ -183,7 +196,7 @@ export function getHttpServer() {
                 ARGs: args,
                 isInDocker: runInDocker,
                 definedValues,
-                pid: 'server: ' + process.pid,
+                pid: `server: ${process.pid}`,
               },
             })
           );
@@ -194,6 +207,7 @@ export function getHttpServer() {
             `fullArgs: ${fullArgs}, args: ${args}, queryString: ${queryString}, fragmentIdentifier: ${fragmentIdentifier}`
           );
         }
+
         // sever would do something
       } else {
         error400(
@@ -212,13 +226,13 @@ export function getHttpServer() {
 
 HTTP_Server.listen(Number(httpPort), httpEndpoint, () => {
   console.info(
-    '\n\n> ' +
-      chalk.green('web:  ') +
-      chalk.yellow(`http:\/\/${httpEndpoint}`) +
-      ':' +
-      chalk.magenta(`${httpPort}`)
+    `\n\n> ${chalk.green('web:  ')}${chalk.yellow(
+      // eslint-disable-next-line no-useless-escape
+      `http:\/\/${httpEndpoint}`
+    )}:${chalk.magenta(`${httpPort}`)}`
   );
 });
+
 // #endregion ++ HTTP_Server ----------------------------------------↑
 // #region ++ TCP_Server --------------------------------------------↓
 /**
@@ -230,12 +244,11 @@ HTTP_Server.listen(Number(httpPort), httpEndpoint, () => {
 const TCP_Server = getTcpServer(actorSet, response, messageMap);
 TCP_Server.listen(Number(actorPort), actorEndpoint, () => {
   console.info(
-    '> ' +
-      chalk.green('actor: ') +
-      chalk.yellow(`tcp:\/\/${actorEndpoint}`) +
-      ':' +
-      chalk.magenta(`${actorPort}`) +
-      '\n\n\n\n'
+    `> ${chalk.green('actor: ')}${chalk.yellow(
+      // eslint-disable-next-line no-useless-escape
+      `tcp:\/\/${actorEndpoint}`
+    )}:${chalk.magenta(`${actorPort}`)}\n\n\n\n`
   );
 });
+
 // #endregion ++ TCP_Server -----------------------------------------↑

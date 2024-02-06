@@ -1,17 +1,18 @@
 'use strict';
 import { existsSync } from 'node:fs';
+import { cpus } from 'node:os';
 import { join } from 'node:path';
 import { Worker } from 'node:worker_threads';
-import { cpus } from 'os';
-import { baseRpcResponseRight } from './API/RPC-serialise';
-import {
+
+import type {
   RpcRequest,
   RpcResponse,
   RpcResponseError,
   WorkerPool,
   WorkerPoolRpc,
 } from '../types';
-import { strategies, supportedStrategies, type Strategies } from './utils';
+import { baseRpcResponseRight } from './API/RPC-serialise';
+import { type Strategies, strategies, supportedStrategies } from './utils';
 
 const CORES = cpus().length;
 
@@ -26,17 +27,20 @@ export class RpcWorkerPool implements WorkerPool, WorkerPoolRpc {
   /**
    * The number of worker threads in the pool. Defaults to the number of CPU cores.
    */
-  private size: number;
+  private readonly size: number;
+
   /**
    * The strategy used to allocate tasks to worker threads. Defaults to 'leastbusy'.
    * See {@link Strategies} for supported strategies.
    */
-  private strategy: Strategies;
+  private readonly strategy: Strategies;
+
   /**
    * A boolean indicating whether logging is enabled. Defaults to false.
    * When logging is enabled, the pool will log messages to the console.
    */
   private _verbose: boolean;
+
   /**
    * An index used to implement round-robin scheduling of tasks. This value is incremented
    * with each call to `scheduleTask()` and is used to select a worker thread to execute the task.
@@ -45,6 +49,7 @@ export class RpcWorkerPool implements WorkerPool, WorkerPoolRpc {
    * the progress of the commands.
    */
   private rr_index: number;
+
   /**
    * The ID of the next command execution. This value is incremented with each call to
    * `scheduleTask()` and is used to track which worker thread is executing a given command.
@@ -56,6 +61,7 @@ export class RpcWorkerPool implements WorkerPool, WorkerPoolRpc {
    * promise returned by the `scheduleTask()` method.
    */
   private next_job_ref: number;
+
   /**
    * An array containing objects representing the worker threads in the pool.
    * Each object contains the worker thread itself, a map of its in-flight commands, and the worker ID.
@@ -63,11 +69,12 @@ export class RpcWorkerPool implements WorkerPool, WorkerPoolRpc {
    * The value of the in-flight command map is the `resolve` function used to resolve the
    * promise returned by the `scheduleTask()` method. The worker ID is an integer in the range [0, size - 1].
    */
-  private workers: {
+  private readonly workers: {
     worker: Worker;
     in_flight_commands: Map<number, any>;
     employee_number: number;
   }[];
+
   // The URI of the worker script file.
   // The number of worker threads to spawn.
   // The strategy for handling incoming requests.
@@ -82,7 +89,7 @@ export class RpcWorkerPool implements WorkerPool, WorkerPoolRpc {
    */
   constructor(
     pathURI: null,
-    size: number = 0,
+    size = 0,
     strategy: Strategies = strategies.leastbusy,
     verbosity = false
   ) {
@@ -132,6 +139,7 @@ export class RpcWorkerPool implements WorkerPool, WorkerPoolRpc {
       });
     }
   }
+
   async execRpc<ResultsType = unknown>(
     rpcRequest: RpcRequest<string[]>
   ): Promise<ResultsType> {
@@ -141,6 +149,7 @@ export class RpcWorkerPool implements WorkerPool, WorkerPoolRpc {
       ...(rpcRequest.params || [])
     );
   }
+
   // ++ --------------------------------------------------------------
   /**
    * Sends a command to a worker thread for execution.
@@ -183,6 +192,7 @@ export class RpcWorkerPool implements WorkerPool, WorkerPoolRpc {
 
     return promise;
   }
+
   // ++ --------------------------------------------------------------
   /**
    * Returns the worker thread to which the next command should be sent.
@@ -194,21 +204,24 @@ export class RpcWorkerPool implements WorkerPool, WorkerPoolRpc {
     in_flight_commands: Map<number, any>;
     employee_number: number;
   } {
-    let employee_number: number = 0;
+    let employee_number = 0;
     switch (this.strategy) {
       case 'random':
         employee_number = Math.floor(Math.random() * this.size);
         break;
       case 'roundrobin':
         this.rr_index++;
-        if (this.rr_index >= this.size) this.rr_index = 0;
+        if (this.rr_index >= this.size) {
+          this.rr_index = 0;
+        }
         employee_number = this.rr_index;
         break;
       case 'leastbusy':
       default:
-        let min = Infinity;
+        // eslint-disable-next-line no-case-declarations
+        let min = Number.POSITIVE_INFINITY;
         for (let i = 0; i < this.size; i++) {
-          let worker = this.workers[i];
+          const worker = this.workers[i];
           if (worker.in_flight_commands.size < min) {
             min = worker.in_flight_commands.size;
             employee_number = i;
@@ -222,6 +235,7 @@ export class RpcWorkerPool implements WorkerPool, WorkerPoolRpc {
 
     return this.workers[employee_number];
   }
+
   // ++ --------------------------------------------------------------
 
   /**
@@ -260,7 +274,7 @@ export class RpcWorkerPool implements WorkerPool, WorkerPoolRpc {
 
     // Process the result or error from the RPC response message.
     const result: unknown = msg?.result ?? null;
-    const error: RpcResponseError<any> | null = msg?.error || null;
+    const error: RpcResponseError | null = msg?.error || null;
     if (!error && result != null) {
       this.handleResult(resolve, result, external_message_identifier);
     } else {
@@ -302,6 +316,7 @@ export class RpcWorkerPool implements WorkerPool, WorkerPoolRpc {
   get verbosity(): boolean {
     return this._verbose;
   }
+
   set verbosity(VERBOSE: boolean) {
     this._verbose = VERBOSE;
   }

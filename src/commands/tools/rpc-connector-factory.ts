@@ -1,3 +1,5 @@
+import { rpcRequestMethodHandler } from 'src/server/API/baseRpcRequest';
+
 import {
   baseRpcResponseLeft,
   baseRpcResponseRight,
@@ -5,17 +7,18 @@ import {
   unwrapRpcResponseLeft,
   unwrapRpcResponseRight,
 } from '../../server/API/RPC-serialise';
-import { rpcRequestMethodHandler } from 'src/server/API/baseRpcRequest';
-import { RpcRequest, RpcResponse } from '../../types/specs';
+import type { RpcRequest, RpcResponse } from '../../types/specs';
+
 export type WorkerNumber = `{ workerNumber: ${number} }`;
 
 // will be considered later no op for the moment to keep the typescript code always valid
 const generateRequestId = () => {
-  return NaN;
+  return Number.NaN;
 };
+
 // will be considered later no op for the moment to keep the typescript code always valid
 const generateResponseId = generateRequestId;
-export function createRpcConnector<P extends Array<any>, R>(method: string) {
+export function createRpcConnector<P extends any[], R>(method: string) {
   // Function 1: Create a request
   const createRequest = (params: P): RpcRequest<P> => {
     // TODO: Implement this function
@@ -35,6 +38,7 @@ export function createRpcConnector<P extends Array<any>, R>(method: string) {
   const createResponse = (result: R): RpcResponse<R> => {
     // TODO: Implement this function
     const responseId = generateResponseId();
+
     // TODO: Handle errors and create RpcLeft objects
     return baseRpcResponseRight<R>(result)(responseId);
   };

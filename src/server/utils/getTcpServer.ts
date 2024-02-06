@@ -1,4 +1,4 @@
-import { IncomingMessage, ServerResponse } from 'node:http';
+import type { ServerResponse } from 'node:http';
 import { createServer as createTCP_Server } from 'node:net';
 
 export function getTcpServer(
@@ -6,17 +6,18 @@ export function getTcpServer(
   response: (
     data: any,
     reply: string,
-    messageMap: Map<number, ServerResponse<IncomingMessage>>
+    messageMap: Map<number, ServerResponse>
   ) => boolean,
-  messageMap: Map<number, ServerResponse<IncomingMessage>>
+  messageMap: Map<number, ServerResponse>
 ) {
   const TCP_Server = createTCP_Server(tcp_client => {
     // The handler function is used to send responses back to this TCP client
     const handler = async (dataRequest: any) =>
-      tcp_client.write(JSON.stringify(dataRequest) + '\0\n\0'); // <1>
+      tcp_client.write(`${JSON.stringify(dataRequest)}\0\n\0`); // <1>
 
     // Add the handler function to the actor pool
     actorSet.add(handler);
+
     // Log the current size of the actor pool
     console.info('actor pool connected', actorSet.size);
 
@@ -37,6 +38,7 @@ export function getTcpServer(
         .forEach(chunk => {
           // Parse the incoming data as a JSON object
           const data = JSON.parse(chunk);
+
           // Retrieve the HTTP response object associated with the message ID
           const reply = JSON.stringify(data).replaceAll('\0', '');
 

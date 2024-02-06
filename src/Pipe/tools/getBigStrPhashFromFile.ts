@@ -1,4 +1,5 @@
 import { getBigStrPhashFromFile } from '@luxcium/phash-compute';
+
 import { ProcessStepComposable } from '../core/classes/ProcessStepComposable';
 
 getBigStrPhashFromFile;

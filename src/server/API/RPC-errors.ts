@@ -6,12 +6,12 @@
  * @param data
  */
 
-import { RpcRight } from '../../types';
+import type { RpcRight } from '../../types';
 
-const PARSE_ERROR = (id: string | number | null, data: any) => ({
+const PARSE_ERROR = (id: number | string | null, data: any) => ({
   jsonrpc: '2.0' as const,
   error: {
-    code: -32700 as const,
+    code: -32_700 as const,
     message:
       'PARSE_ERROR: Invalid JSON was received by the server. An error occurred on the server while parsing the JSON text.' as const,
     data,
@@ -25,10 +25,10 @@ const PARSE_ERROR = (id: string | number | null, data: any) => ({
  * @param id
  * @param data
  */
-const INVALID_REQUEST = (id: string | number | null, data: any) => ({
+const INVALID_REQUEST = (id: number | string | null, data: any) => ({
   jsonrpc: '2.0' as const,
   error: {
-    code: -32600 as const,
+    code: -32_600 as const,
     message:
       'INVALID_REQUEST: The JSON sent is not a valid Request object.' as const,
     data,
@@ -42,26 +42,27 @@ const INVALID_REQUEST = (id: string | number | null, data: any) => ({
  * @param id
  * @param data
  */
-const METHOD_NOT_FOUND = (id: string | number | null, data: any) => ({
+const METHOD_NOT_FOUND = (id: number | string | null, data: any) => ({
   jsonrpc: '2.0' as const,
   error: {
-    code: -32601 as const,
+    code: -32_601 as const,
     message:
       'METHOD_NOT_FOUND: The method does not exist / is not available.' as const,
     data,
   },
   id,
 });
+
 /**
  * INVALID_PARAMS: 	-32602 	Invalid method parameter(s).
  * available.
  * @param id
  * @param data
  */
-const INVALID_PARAMS = (id: string | number | null, data: any) => ({
+const INVALID_PARAMS = (id: number | string | null, data: any) => ({
   jsonrpc: '2.0' as const,
   error: {
-    code: -32602 as const,
+    code: -32_602 as const,
     message: 'INVALID_PARAMS: Invalid method parameter(s).' as const,
     data,
   },
@@ -73,15 +74,16 @@ const INVALID_PARAMS = (id: string | number | null, data: any) => ({
  * @param id
  * @param data
  */
-const INTERNAL_ERROR = <E>(id: string | number | null, data: E) => ({
+const INTERNAL_ERROR = <E>(id: number | string | null, data: E) => ({
   jsonrpc: '2.0' as const,
   error: {
-    code: -32603 as const,
+    code: -32_603 as const,
     message: 'INTERNAL_ERROR: Internal JSON-RPC error.' as const,
     data,
   },
   id,
 });
+
 /**
  * SERVER_ERROR: 	-32000 to -32099 	Reserved for implementation-defined
  * server-errors.
@@ -90,19 +92,20 @@ const INTERNAL_ERROR = <E>(id: string | number | null, data: E) => ({
  * @param message
  */
 const SERVER_ERROR = (
-  id: string | number | null,
+  id: number | string | null,
   data: any,
-  code: number = 0,
-  message: string = ''
+  code = 0,
+  message = ''
 ) => ({
   jsonrpc: '2.0' as const,
   error: {
-    code: -32000 - Math.abs(code % 100),
+    code: -32_000 - Math.abs(code % 100),
     message: `SERVER_ERROR: ${message} (server-error).` as const,
     data,
   },
   id,
 });
+
 // -32768 to -32000
 /**
  * APPLICATION_ERROR: 	-32000 to -32099 	Reserved for implementation-defined
@@ -112,14 +115,14 @@ const SERVER_ERROR = (
  * @param message
  */
 const APPLICATION_ERROR = (
-  id: string | number | null,
+  id: number | string | null,
   data: any,
-  code: number = 0,
-  message: string = ''
+  code = 0,
+  message = ''
 ) => ({
   jsonrpc: '2.0' as const,
   error: {
-    code: -31999 + Math.abs(code % 31999),
+    code: -31_999 + Math.abs(code % 31_999),
     message: `APPLICATION_ERROR:  ${message} (application error)` as const,
     data,
   },
@@ -157,10 +160,10 @@ export function unwrapRpcResponseRight<R = unknown>(
   response: RpcRight<R>
 ): [
   result: R,
-  id: string | number | null,
+  id: number | string | null,
   isJsonRpc: boolean,
   originalResponse: RpcRight<R>,
 ] {
   const { result, id, jsonrpc } = response;
-  return [result, id, jsonrpc === '2.0', response];
+  return [result, id, '2.0' === jsonrpc, response];
 }

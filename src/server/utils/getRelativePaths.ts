@@ -1,4 +1,5 @@
 import { normalize } from 'node:path';
+
 /**
  * Returns the relative paths of two absolute paths to their closest common parent folder, excluding common segments.
  *
@@ -32,10 +33,10 @@ export function getRelativePaths(path1: string, path2: string): string[] {
   segments2.splice(0, commonSegments.length);
 
   // if there are no remaining segments, return the file names
-  if (segments1.length === 0 && segments2.length === 0) {
+  if (0 === segments1.length && 0 === segments2.length) {
     return [
-      `.${path1.substring(path1.lastIndexOf('/'))}`,
-      `.${path2.substring(path2.lastIndexOf('/'))}`,
+      `.${path1.slice(Math.max(0, path1.lastIndexOf('/')))}`,
+      `.${path2.slice(Math.max(0, path2.lastIndexOf('/')))}`,
     ];
   }
 
@@ -44,9 +45,9 @@ export function getRelativePaths(path1: string, path2: string): string[] {
   let relative2 = `.${segments2.map(s => `/${s}`).join('')}`;
 
   // if there are no common segments, add the leading "/"
-  if (commonSegments.length === 0) {
-    relative1 = `.${path1.substring(0, path1.indexOf(relative1))}${relative1}`;
-    relative2 = `.${path2.substring(0, path2.indexOf(relative2))}${relative2}`;
+  if (0 === commonSegments.length) {
+    relative1 = `.${path1.slice(0, Math.max(0, path1.indexOf(relative1)))}${relative1}`;
+    relative2 = `.${path2.slice(0, Math.max(0, path2.indexOf(relative2)))}${relative2}`;
   }
 
   return [relative1, relative2];

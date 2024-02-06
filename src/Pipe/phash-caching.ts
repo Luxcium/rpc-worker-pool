@@ -1,4 +1,4 @@
-import createRedisClient from '@luxcium/redis-services';
+import type createRedisClient from '@luxcium/redis-services';
 
 // Helper function to generate a redis key from an image path
 const generateKey = (path: string) => `image:${path}:phash`;
@@ -12,6 +12,7 @@ export function createPhashCachingFunction(
   return async function (path: string): Promise<string> {
     const key = generateKey(path);
     const redis = redisClient({});
+
     // Check cache
     let phash = await redis.get(key);
 
@@ -21,9 +22,9 @@ export function createPhashCachingFunction(
         phash = await computePhash(path);
         const binaryPhash = await convertToBinary(phash);
         redis.set(key, binaryPhash);
-      } catch (e) {
+      } catch (error) {
         // In case of any error, return an empty string
-        console.error(e);
+        console.error(error);
         return '';
       }
     }

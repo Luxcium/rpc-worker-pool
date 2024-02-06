@@ -1,4 +1,4 @@
-import { Stats } from 'fs';
+import type { Stats } from 'fs';
 import { stat } from 'fs/promises';
 
 export const myFunct001 = (

@@ -1,10 +1,10 @@
+export type { Leastbusy, Random, Roundrobin, Strategies } from './strategies';
 export {
+  getStrategy,
+  isStrategy,
   LEASTBUSY,
   RANDOM,
   ROUNDROBIN,
-  getStrategy,
-  isStrategy,
   strategies,
   supportedStrategies,
 } from './strategies';
-export type { Leastbusy, Random, Roundrobin, Strategies } from './strategies';

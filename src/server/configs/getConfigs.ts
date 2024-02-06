@@ -1,8 +1,9 @@
+/* eslint-disable unicorn/consistent-function-scoping */
 import { isStrategy, strategies } from '../utils';
-import { getEnvConfigs } from './getEnvConfigs';
 import { getArgvConfigs } from './getArgvConfigs';
-import { IDefaultsConfigs } from './types/IDefaultsConfigs';
-import { IPriorities } from './types/IPriorities';
+import { getEnvConfigs } from './getEnvConfigs';
+import type { IDefaultsConfigs } from './types/IDefaultsConfigs';
+import type { IPriorities } from './types/IPriorities';
 
 // ## WILL SET PRIORRITY ―――――――――――――――――――――――――――――――――――――――――――――
 export function getConfigs({
@@ -20,14 +21,14 @@ export function getConfigs({
   const inDocker =
     (isInDocker: boolean) =>
     <T>(e?: T, a?: T) =>
-      isInDocker ? e || a : a || e;
+      isInDocker ? e ?? a : a ?? e;
   const priority = inDocker(env.runInDockerFlag);
 
   // ## WILL DEFINE PRIORRITY ――――――――――――――――――――――――――――――――――――――――――
   const define =
     <T>(defaultValue: T | string) =>
     (env?: T | string, arg?: T | string) =>
-      priority(env, arg) || defaultValue;
+      priority(env, arg) ?? defaultValue;
 
   const defHttpEndPoint = define(HTTP_ENDPOINT);
   const defHttpPort = define(HTTP_PORT);

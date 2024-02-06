@@ -32,7 +32,7 @@
  * @see {@link https://www.jsonrpc.org/specification}
  *
  */
-export interface RpcNotification<N extends Array<any> | Record<string, any>> {
+export interface RpcNotification<N extends any[] | Record<string, any>> {
   /**
    * A String specifying the version of the JSON-RPC protocol.
    * MUST be exactly "2.0".
@@ -73,9 +73,7 @@ export interface RpcNotification<N extends Array<any> | Record<string, any>> {
  *
  */
 
-export interface RpcRequest<
-  P extends Array<unknown> | Record<string, unknown>,
-> {
+export interface RpcRequest<P extends Record<string, unknown> | unknown[]> {
   /**
    * A String specifying the version of the JSON-RPC protocol. MUST be exactly "2.0".
    */
@@ -90,7 +88,7 @@ export interface RpcRequest<
    * if included. This member is used to correlate the context between
    * the two objects.
    */
-  id: string | number;
+  id: number | string;
 
   /**
    * A String containing the name of the method to be invoked. Method

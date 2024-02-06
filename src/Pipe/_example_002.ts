@@ -6,9 +6,7 @@ export type Deferred<R = unknown> = () => Promise<R>;
 /**
  * Interface for an object that encapsulates asynchronous operations.
  */
-interface OperationObject<R = unknown> {
-  [key: string]: Deferred<R>;
-}
+type OperationObject<R = unknown> = Record<string, Deferred<R>>;
 
 type Deferred_<R = unknown> = () => Promise<R>;
 
@@ -64,10 +62,11 @@ export class DAOEObject {
     for (const key in this.operations) {
       try {
         results[key] = await this.operations[key]();
-      } catch (err) {
+      } catch (error) {
         // Here we could defer the error handling by storing the error in the results object,
         // but for simplicity we'll just throw the error.
-        throw err;
+        console.error(error);
+        throw error;
       }
     }
     return results;
@@ -88,13 +87,14 @@ export function addOperationToObj<R>(
   key: string,
   operation: Deferred<R>
 ): OperationObject {
-  const newObj = { ...obj };
-  newObj[key] = operation;
-  return newObj;
+  const updatedObj = { ...obj };
+  updatedObj[key] = operation;
+  return updatedObj;
 }
+
 // /=//==//===//====//=====//======//=======//========//=============/
 type TheTryCatchArgs<A, R, E> = {
-  fnct: (...a: A[]) => R | Promise<R>;
+  fnct: (...a: A[]) => Promise<R> | R;
   errMsg: string;
   errVal: E;
 };
@@ -102,7 +102,7 @@ const logError = console.error;
 export async function theTryCathBlock<A, R, E = R>(
   { fnct, errMsg, errVal }: TheTryCatchArgs<A, R, E>,
   ...args: A[]
-): Promise<R | E> {
+): Promise<E | R> {
   try {
     const result = fnct(...args);
     return await Promise.resolve(result);
@@ -111,4 +111,5 @@ export async function theTryCathBlock<A, R, E = R>(
     return errVal;
   }
 }
+
 // /=//==//===//====//=====//======//=======//========//=============/

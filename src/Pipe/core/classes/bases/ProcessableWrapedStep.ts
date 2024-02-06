@@ -1,14 +1,14 @@
 import type {
   IGetTransform,
   ITransformInput,
-  IUnWrap,
   IUnbox,
+  IUnWrap,
   IWrap,
   IWrapUnWrap,
   MapFunction,
 } from '../../types';
 import { ProcessStep } from '../ProcessStep';
-import { ProcessableStep } from './ProcessableStep';
+import type { ProcessableStep } from './ProcessableStep';
 
 export abstract class ProcessableWrapedStep<T, R>
   extends ProcessStep<T, R>
@@ -20,9 +20,11 @@ export abstract class ProcessableWrapedStep<T, R>
   static override of<TVal, RVal>(transform: (input: TVal) => RVal) {
     return new ProcessWrap<TVal, RVal>(transform);
   }
+
   static override from<TVal, RVal>(processStep: IGetTransform<TVal, RVal>) {
     return new ProcessWrap<TVal, RVal>(processStep.transform);
   }
+
   protected constructor(transform: (input: T) => R) {
     super(transform);
   }
@@ -53,6 +55,7 @@ export class ProcessWrap<T, R>
     const composedTransform = (input: I) => transform(preComposeWith(input));
     return new ProcessWithWrap<I, R>(composedTransform);
   }
+
   public wrap<O>(composeWith: (input: R) => O): ProcessWithUnWrap<T, O> {
     const transform: (input: T) => R = this._transform;
     const composedTransform = (input: T) => composeWith(transform(input));
@@ -93,6 +96,7 @@ export class ProcessWithUnWrap<T, R>
     const composedTransform = (input: I) => transform(preComposeWith(input));
     return new ProcessStep<I, R>(composedTransform);
   }
+
   map<I, O>(
     funct: (input: MapFunction<T, R>) => MapFunction<I, O>
   ): ProcessStep<I, O> {
@@ -106,6 +110,7 @@ export class ProcessWithUnWrap<T, R>
     const { transform } = this;
     return ProcessStep.of<I, O>(input => fn.transform(input)(transform));
   }
+
   chain<I, O>(
     fn: (input: MapFunction<T, R>) => ProcessStep<I, O>
   ): ProcessStep<I, O> {
@@ -134,12 +139,14 @@ export class ProcessWithWrap<T, R>
     const { transform } = this;
     return ProcessStep.of(funct(transform));
   }
+
   ap<I, O>(
     fn: ProcessStep<I, (input: MapFunction<T, R>) => O>
   ): ProcessStep<I, O> {
     const { transform } = this;
     return ProcessStep.of<I, O>(input => fn.transform(input)(transform));
   }
+
   chain<I, O>(
     fn: (input: MapFunction<T, R>) => ProcessStep<I, O>
   ): ProcessStep<I, O> {

@@ -1,4 +1,4 @@
-import { Strategies } from '../../utils';
+import type { Strategies } from '../../utils';
 
 export interface IPriorities {
   httpEndpoint: string;

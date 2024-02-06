@@ -20,8 +20,8 @@
     "source.addMissingImports",
     "source.organizeImports",
     "source.autoFix",
-    "source.fixAll.eslint",
-    "source.fixAll.prettier"
+    "source.fixAll.eslint"
+    // "source.fixAll.prettier"
   ],
   "material-icon-theme.folders.associations": {
     "eslint-plugin": "rules",

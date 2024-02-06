@@ -16,7 +16,7 @@ export const LEASTBUSY = 'leastbusy' as const;
 /**
  * The `Strategies` type represents a union of the load balancing strategies.
  */
-export type Strategies = typeof ROUNDROBIN | typeof RANDOM | typeof LEASTBUSY;
+export type Strategies = typeof LEASTBUSY | typeof RANDOM | typeof ROUNDROBIN;
 
 /**
  * The `Roundrobin` type represents the round-robin load balancing strategy.

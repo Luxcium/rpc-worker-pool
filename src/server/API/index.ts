@@ -1,6 +1,6 @@
 import { RPC_ERRORS_FNS } from './RPC-errors';
-export { rpcRequestMethodHandler as baseRpcRequest } from './baseRpcRequest';
 
+export { rpcRequestMethodHandler as baseRpcRequest } from './baseRpcRequest';
 export {
   baseRpcNotification,
   baseRpcResponseError,
@@ -10,13 +10,13 @@ export {
   rpcMethod,
   rpcParams,
   swapRpcId,
+  type UnwrapedRpcNotification,
   unwrapRpcError,
   unwrapRpcNotification,
   unwrapRpcRequest,
   unwrapRpcResponse,
   unwrapRpcResponseLeft,
   unwrapRpcResponseRight,
-  type UnwrapedRpcNotification,
 } from './RPC-serialise';
 export { RPC_ERRORS_FNS };
 export const {

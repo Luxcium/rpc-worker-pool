@@ -1,10 +1,13 @@
 #!/usr/bin/env node
+/* eslint-disable @typescript-eslint/strict-boolean-expressions */
 'use strict';
 
-import chalk from 'chalk';
 import { existsSync } from 'node:fs';
 import { connect } from 'node:net';
 import { join } from 'node:path';
+
+import chalk from 'chalk';
+
 import { RpcWorkerPool } from './server/RpcWorkerPool';
 
 // ## DEFAULTS VALUE ―――――――――――――――――――――――――――――――――――――――――――――――――
@@ -17,6 +20,7 @@ const STRATEGY = 'roundrobin';
 const SCRIPT_FILE_URI = join(
   `${__dirname}/worker.${existsSync(`${__dirname}/worker.ts`) ? 'ts' : 'js'}`
 );
+
 // ## WILL PREFRE ENV IN DOCKER CONTAINER ――――――――――――――――――――――――――――
 const endpointEnv = process.env.ACTOR_ENDPOINT;
 const portEnv = process.env.ACTOR_PORT;
@@ -25,13 +29,18 @@ const strategyEnv = process.env.ACTOR_STRATEGY;
 const scriptFileEnv = process.env.SCRIPT_FILE_URI;
 
 // ## WILL PREFRE ARGV WHEN COMMAND LINE INVOQUATION ―――――――――――――――――
-const [, , connecParam, threadsParam, strategyParam, scriptFileParam] =
+const [_, __, connecParam, threadsParam, strategyParam, scriptFileParam] =
   process.argv;
 const [endpointParam, portParam] = (connecParam || '').split(':');
 
 // ## WILL SET PRIORRITY ―――――――――――――――――――――――――――――――――――――――――――――
+/**
+ * Function to determine the value based on whether it is running in Docker or not.
+ * @param {boolean} isInDocker - Indicates whether the code is running in Docker.
+ * @returns {function} - Returns a function that takes two arguments and returns the appropriate value based on the isInDocker parameter.
+ */
 const inDocker = isInDocker => (e, a) => (isInDocker ? e || a : a || e);
-const priority = inDocker(process.env.RUNNING_IN_DOCKER === 'true');
+const priority = inDocker('true' === process.env.RUNNING_IN_DOCKER);
 
 // ## WILL DEFINE PRIORRITY ――――――――――――――――――――――――――――――――――――――――――
 const define = def => (env, arg) => priority(env, arg) || def;
@@ -69,10 +78,10 @@ const workerPool = new RpcWorkerPool(
 );
 
 // ## WILL TRY TO CONNECT ――――――――――――――――――――――――――――――――――――――――――――
-console.log('Will try to connect', actorEndpoint + ':' + actorPort);
+console.log('Will try to connect', `${actorEndpoint}:${actorPort}`);
 const upstreamSocket = connect(Number(actorPort), actorEndpoint, () => {
   console.log(
-    '  > Actor pool connected to server at ' + actorEndpoint + ':' + actorPort
+    `  > Actor pool connected to server at ${actorEndpoint}:${actorPort}`
   );
 });
 
@@ -88,6 +97,7 @@ void upstreamSocket.on('data', raw_data => {
   // console.log('raw_data:', String(raw_data));
 
   const data_string = String(raw_data).split('\0\n\0');
+
   // last_data_string = data_string.slice(-1)[0];
 
   // data_string.slice(0, -1).forEach(async chunk => {
@@ -116,7 +126,7 @@ void upstreamSocket.on('data', raw_data => {
           id: data.id,
           pid: `actor(${++actor_unit}) at process: ${process.pid}`,
         },
-        'performance: ' + chalk.yellow(time) + ' ms'
+        `performance: ${chalk.yellow(time)} ms`
       );
       const jsonRpcMessage = {
         jsonrpc: '2.0',
@@ -126,15 +136,16 @@ void upstreamSocket.on('data', raw_data => {
         performance: delay,
       };
 
-      void upstreamSocket.write(JSON.stringify(jsonRpcMessage) + '\0\n\0');
-    } catch (err) {
+      void upstreamSocket.write(`${JSON.stringify(jsonRpcMessage)}\0\n\0`);
+    } catch (error) {
       // const jsonRpcMessage = {
       //   jsonrpc: '2.0',
       //   id: data.id,
       //   error: { err },
       //   pid: 'actor:' + process.pid,
       // };
-      console.error(err);
+      console.error(error);
+
       // void upstreamSocket.write(JSON.stringify(jsonRpcMessage) + '\0\n\0');
     }
   });
@@ -143,9 +154,10 @@ void upstreamSocket.on('data', raw_data => {
 // ## LISTEN FOR CONNECTION END ――――――――――――――――――――――――――――――――――――――
 void upstreamSocket.on('end', () => {
   console.log(
-    '  > Disconnected from actor pool at ' + actorEndpoint + ':' + actorPort
+    `  > Disconnected from actor pool at ${actorEndpoint}:${actorPort}`
   );
 });
+
 // ## ――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――
 
 /* **************************************************************** */

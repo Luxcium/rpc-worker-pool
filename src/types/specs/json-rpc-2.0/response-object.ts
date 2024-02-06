@@ -42,6 +42,7 @@ export interface RpcRight<R> {
    * exactly "2.0".
    */
   jsonrpc: '2.0';
+
   /**
    * An identifier established by the Client that MUST contain a
    * String, Number, or NULL value if included. If it is not included,
@@ -51,7 +52,7 @@ export interface RpcRight<R> {
    * if included. This member is used to correlate the context
    * between the two objects.
    */
-  id: string | number;
+  id: number | string;
 
   /**
    * This member is REQUIRED on success. This member MUST NOT exist if
@@ -59,7 +60,7 @@ export interface RpcRight<R> {
    * is determined by the method invoked on the Server.
    */
   result: R;
-  error?: undefined | null;
+  error?: null | undefined;
 }
 
 /**
@@ -108,7 +109,7 @@ export interface RpcLeft<E = any> {
    * if included. This member is used to correlate the context
    * between the two objects.
    */
-  id: string | number | null;
+  id: number | string | null;
 
   /**
    * This member is REQUIRED on error. This member MUST NOT exist if
@@ -116,7 +117,7 @@ export interface RpcLeft<E = any> {
    * this member MUST be an Object as defined in section 5.1.
    */
   error: RpcResponseError<E>;
-  result?: undefined | null;
+  result?: null | undefined;
 }
 
 /**

@@ -1,6 +1,6 @@
-import { ICompose, ITransformInput, IUnbox, MapFunction } from '../types';
+import type { ICompose, ITransformInput, IUnbox, MapFunction } from '../types';
+import type { ProcessableStep } from './bases/ProcessableStep';
 import { ProcessStep } from './ProcessStep';
-import { ProcessableStep } from './bases/ProcessableStep';
 
 export class ProcessStepComposable<T, R>
   extends ProcessStep<T, R>
@@ -9,12 +9,15 @@ export class ProcessStepComposable<T, R>
   static override of<TVal, RVal>(transform: (input: TVal) => RVal) {
     return new ProcessStepComposable<TVal, RVal>(transform);
   }
+
   static override from<TVal, RVal>(processStep: ProcessableStep<TVal, RVal>) {
     return new ProcessStepComposable<TVal, RVal>(processStep.transform);
   }
+
   protected constructor(transform: (input: T) => R) {
     super(transform);
   }
+
   public precompose<I>(
     preComposeWith: (input: I) => T
   ): ProcessStepComposable<I, R> {
@@ -22,6 +25,7 @@ export class ProcessStepComposable<T, R>
     const composedTransform = (input: I) => transform(preComposeWith(input));
     return new ProcessStepComposable<I, R>(composedTransform);
   }
+
   public compose<O>(composeWith: (input: R) => O): ProcessStepComposable<T, O> {
     const transform: (input: T) => R = this._transform;
     const composedTransform = (input: T) => composeWith(transform(input));

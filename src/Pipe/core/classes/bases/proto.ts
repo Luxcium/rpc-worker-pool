@@ -1,4 +1,4 @@
-import { MapFunction } from '../../types/MapFunction';
+import type { MapFunction } from '../../types/MapFunction';
 
 export type ALike<T, R> = MapFunction<T, R>;
 export type BLike = MapFunction<ILike, OLike>;
@@ -22,8 +22,9 @@ export type QLike = any;
 // }
 
 export interface IFunctor<A> {
-  map<B>(funct: (input: A) => B): IFunctor<B>;
+  map: <B>(funct: (input: A) => B) => IFunctor<B>;
 }
+
 // interface IFunctor<number> {
 //   map<string>(funct: (input: number) => string): IFunctor<string>;
 // }

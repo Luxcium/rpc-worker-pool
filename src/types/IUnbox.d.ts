@@ -5,5 +5,5 @@
  */
 export interface IUnbox<T> {
   /** Unboxes the value `T` from inside the _current_ Functor. */
-  unbox(): T;
+  unbox: () => T;
 }

@@ -1,10 +1,11 @@
 import type { ServerResponse } from 'node:http';
+
 import { serverResponse } from './serverResponse';
 
 export function errorHttp(statusCode: number, statusMessage: string) {
-  return (res: ServerResponse, reason: string = '', description: string) => {
+  return (res: ServerResponse, reason = '', description: string) => {
     const writeHead = serverResponse(res);
-    const message = `${statusMessage}${reason ? ': ' + reason : ''}`;
+    const message = `${statusMessage}${reason ? `: ${reason}` : ''}`;
     const warning = `ERROR[${statusCode}]: ${message}`;
     console.warn(warning);
     const reply = writeHead(statusCode, message, 'application/json');
@@ -13,7 +14,7 @@ export function errorHttp(statusCode: number, statusMessage: string) {
         jsonrpc: '2.0',
         id: null,
         error: {
-          code: -32000,
+          code: -32_000,
           message,
           data: { warning, description },
         },
@@ -25,7 +26,7 @@ export function errorHttp(statusCode: number, statusMessage: string) {
 }
 export function error400(
   res: ServerResponse,
-  reason: string = '',
+  reason = '',
   description: string
 ) {
   const reply = errorHttp(400, 'Bad Request');
@@ -33,17 +34,13 @@ export function error400(
 }
 export function error503(
   res: ServerResponse,
-  reason: string = '',
+  reason = '',
   description: string
 ) {
   const reply = errorHttp(503, 'Service Unavailable');
   return reply(res, reason, description);
 }
-export function error500(
-  res: ServerResponse,
-  reason: string = '',
-  description: string = ''
-) {
+export function error500(res: ServerResponse, reason = '', description = '') {
   const reply = errorHttp(500, 'Internal Server Error');
   return reply(res, reason, description);
 }

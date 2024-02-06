@@ -5,7 +5,7 @@
  *
  * @packageDocumentation
  */
-import { RpcRequest } from '../../types/specs';
+import type { RpcRequest } from '../../types/specs';
 
 /**
  * Returns a function that creates a JSON-RPC 2.0 request object with
@@ -22,9 +22,9 @@ import { RpcRequest } from '../../types/specs';
  * a generic type that can represent either a tupple with labels or an
  * object with string keys and any type values.
  */
-export function rpcRequestMethodHandler<
-  Q extends Array<any> | Record<string, any>,
->(method: string) {
+export function rpcRequestMethodHandler<Q extends any[] | Record<string, any>>(
+  method: string
+) {
   /**
    * Creates an RPC request accepting parameters.
    * @typeParam P - The type of the parameters for the RPC request. Can be an array or a record.
@@ -32,7 +32,7 @@ export function rpcRequestMethodHandler<
    * @returns A function that takes a request ID and returns an RPC request object.
    */
   return function rpcRequestParametersHandler<
-    P extends Array<any> | Record<string, any> = Q,
+    P extends any[] | Record<string, any> = Q,
   >(params: P) {
     /**
      * Creates an RPC request object setting it's ID.

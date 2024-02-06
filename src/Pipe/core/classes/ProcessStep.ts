@@ -18,14 +18,17 @@ export class ProcessStep<T, R>
   ): ProcessStep<TVal, RVal> {
     return new ProcessStep<TVal, RVal>(transform);
   }
+
   static from<TVal, RVal>(
     processStep: IGetTransform<TVal, RVal>
   ): ProcessStep<TVal, RVal> {
     return new ProcessStep<TVal, RVal>(processStep.transform);
   }
+
   protected constructor(transform: (input: T) => R) {
     super(transform);
   }
+
   public transformInput(input: T): R {
     return this._transform(input);
   }

@@ -1,4 +1,4 @@
-import { ServerResponse } from 'node:http';
+import type { ServerResponse } from 'node:http';
 
 export function serverResponse(res: ServerResponse) {
   return (statusCode: number, statusMessage: string, ContentType: string) => {

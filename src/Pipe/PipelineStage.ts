@@ -1,4 +1,4 @@
-import { RpcWorkerPool } from 'src/server/RpcWorkerPool';
+import type { RpcWorkerPool } from 'src/server/RpcWorkerPool';
 
 interface PipelineItem<IO> {
   id: number;
@@ -6,9 +6,12 @@ interface PipelineItem<IO> {
 }
 
 export class PipelineStage<I, O> {
-  inputQueue: Array<PipelineItem<I>>;
-  outputQueue: Array<PipelineItem<O>>;
+  inputQueue: PipelineItem<I>[];
+
+  outputQueue: PipelineItem<O>[];
+
   workerPool: RpcWorkerPool;
+
   commandName: string;
 
   constructor(workerPool: RpcWorkerPool, commandName: string) {

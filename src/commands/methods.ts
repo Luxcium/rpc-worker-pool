@@ -1,9 +1,13 @@
 import { delay, heavyTask, timeStamp } from '@luxcium/tools';
-import { DelayValue, TaskValue } from '@luxcium/tools/lib/typings/delay/delay';
+import type {
+  DelayValue,
+  TaskValue,
+} from '@luxcium/tools/lib/typings/delay/delay';
 import chalk from 'chalk';
+
 import { APPLICATION_ERROR } from '../server/API';
 import type { IdsObject, RpcLeft, RpcRequest, RpcRight } from '../types';
-import { Methods } from '../types/Methods';
+import type { Methods } from '../types/Methods';
 import { getParams } from './tools/getParams';
 
 export const methods: Methods<unknown> = {
@@ -21,21 +25,21 @@ export const methods: Methods<unknown> = {
       const initialTime_0 = performance.now();
 
       const arg0 = Number(args[0]);
-      const delay_0a = isFinite(arg0) ? arg0 : 100;
+      const delay_0a = Number.isFinite(arg0) ? arg0 : 100;
       const arg1 = Number(args[1]);
-      const delay_1a = isFinite(arg1) ? arg1 : 100;
+      const delay_1a = Number.isFinite(arg1) ? arg1 : 100;
       const arg2 = Number(args[2]);
-      const heavy_0 = isFinite(arg2) ? arg2 : 10;
+      const heavy_0 = Number.isFinite(arg2) ? arg2 : 10;
       const arg3 = Number(args[3]);
-      const heavy_1 = isFinite(arg3) ? arg3 : 10;
+      const heavy_1 = Number.isFinite(arg3) ? arg3 : 10;
 
       const arg4 = Number(args[4]);
-      const delay_0b = isFinite(arg4) ? arg4 : 10;
+      const delay_0b = Number.isFinite(arg4) ? arg4 : 10;
       const arg5 = Number(args[5]);
-      const delay_1b = isFinite(arg5) ? arg5 : 10;
+      const delay_1b = Number.isFinite(arg5) ? arg5 : 10;
 
-      const awaited = Boolean(args[6] === 'true');
-      const delayed = Boolean(args[6] === 'true');
+      const awaited = Boolean('true' === args[6]);
+      const delayed = Boolean('true' === args[6]);
 
       let delayValues_a: DelayValue;
       let delayValues_b: DelayValue;

@@ -1,4 +1,4 @@
-import { IArgsConfigs } from './types/IArgsConfigs';
+import type { IArgsConfigs } from './types/IArgsConfigs';
 
 // ## WILL PREFRE ARGV WHEN COMMAND LINE INVOQUATION ―――――――――――――――――
 export function getArgvConfigs(): IArgsConfigs {

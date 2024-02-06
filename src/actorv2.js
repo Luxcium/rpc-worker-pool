@@ -2,12 +2,13 @@
 'use strict';
 import chalk from 'chalk';
 import { connect } from 'net';
+
 // import { Strategies } from './consts';
 import { RpcWorkerPool } from './server/RpcWorkerPool';
 
 const workerScriptFileUri = `${__dirname}/worker.js`;
 
-const [, , host] = process.argv;
+const host = process.argv[2];
 const [hostname, port] = host.split(':');
 
 const Strategies = {
@@ -32,6 +33,7 @@ void upstreamSocket.on('data', raw_data => {
   // console.log('raw_data:', String(raw_data));
 
   const data_string = String(raw_data).split('\0\n\0');
+
   // last_data_string = data_string.slice(-1)[0];
 
   // data_string.slice(0, -1).forEach(async chunk => {
@@ -65,25 +67,26 @@ void upstreamSocket.on('data', raw_data => {
           id: data.id,
           pid: `actor(${++actor_unit}) at process: ${process.pid}`,
         },
-        'performance: ' + chalk.yellow(time) + ' ms'
+        `performance: ${chalk.yellow(time)} ms`
       );
       const jsonRpcMessage = {
         jsonrpc: '2.0',
         id: data.id,
         result,
         performance: delay,
-        pid: 'actor:' + process.pid,
+        pid: `actor:${process.pid}`,
       };
 
-      void upstreamSocket.write(JSON.stringify(jsonRpcMessage) + '\0\n\0');
-    } catch (err) {
+      void upstreamSocket.write(`${JSON.stringify(jsonRpcMessage)}\0\n\0`);
+    } catch (error) {
       // const jsonRpcMessage = {
       //   jsonrpc: '2.0',
       //   id: data.id,
       //   error: { err },
       //   pid: 'actor:' + process.pid,
       // };
-      console.error(err);
+      console.error(error);
+
       // void upstreamSocket.write(JSON.stringify(jsonRpcMessage) + '\0\n\0');
     }
   });
@@ -92,6 +95,7 @@ void upstreamSocket.on('data', raw_data => {
 void upstreamSocket.on('end', () => {
   console.log('  >', 'disconnect from server');
 });
+
 // let last_data_string = '';
 // let actor_unit = 0;
 // void upstreamSocket.on('data', raw_data => {

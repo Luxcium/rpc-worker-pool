@@ -2,12 +2,13 @@
 'use strict';
 import chalk from 'chalk';
 import { connect } from 'net';
+
 // import { Strategies } from './consts';
 import { RpcWorkerPool } from './server/RpcWorkerPool';
 
 const workerScriptFileUri = `${__dirname}/worker.js`;
 
-const [, , host] = process.argv;
+const host = process.argv[2];
 const [hostname, port] = host.split(':');
 
 const Strategies = {
@@ -15,6 +16,7 @@ const Strategies = {
   random: 'random',
   leastbusy: 'leastbusy',
 };
+
 // ++ ----------------------------------------------------------------
 console.log('Will try to connect', host);
 const upstreamSocket = connect(Number(port), hostname, () => {
@@ -70,25 +72,26 @@ void upstreamSocket.on('data', raw_data => {
           id: data.id,
           pid: `actor(${++actor_unit}) at process: ${process.pid}`,
         },
-        'performance: ' + chalk.yellow(time) + ' ms'
+        `performance: ${chalk.yellow(time)} ms`
       );
       const jsonRpcMessage = {
         jsonrpc: '2.0',
         id: data.id,
         result,
         performance: delay,
-        pid: 'actor:' + process.pid,
+        pid: `actor:${process.pid}`,
       };
 
-      void upstreamSocket.write(JSON.stringify(jsonRpcMessage) + '\0\n\0');
-    } catch (err) {
+      void upstreamSocket.write(`${JSON.stringify(jsonRpcMessage)}\0\n\0`);
+    } catch (error) {
       // const jsonRpcMessage = {
       //   jsonrpc: '2.0',
       //   id: data.id,
       //   error: { err },
       //   pid: 'actor:' + process.pid,
       // };
-      console.error(err);
+      console.error(error);
+
       // void upstreamSocket.write(JSON.stringify(jsonRpcMessage) + '\0\n\0');
     }
   });

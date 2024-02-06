@@ -1,9 +1,9 @@
-import { PipelineStage } from './PipelineStage';
+import type { PipelineStage } from './PipelineStage';
 
 export class Pipeline {
-  stages: Array<PipelineStage<any, any>>;
+  stages: PipelineStage<any, any>[];
 
-  constructor(stages: Array<PipelineStage<any, any>>) {
+  constructor(stages: PipelineStage<any, any>[]) {
     this.stages = stages;
   }
 
