@@ -57,7 +57,7 @@ export interface Result {
   args: ArgsTuple;
 }
 
-export interface HelloWorldWorkerResultRpc extends RpcRight<Result> {
+export interface HelloWorldResult extends RpcRight<Result> {
   jsonrpc: '2.0';
   id: number | string;
   result: Result;
@@ -65,8 +65,8 @@ export interface HelloWorldWorkerResultRpc extends RpcRight<Result> {
 
 export interface HelloWorldWorker {
   '@helloWorldWorkerResult→':
-    | Awaited<HelloWorldWorkerResultRpc>
-    | Promise<HelloWorldWorkerResultRpc>;
+    | Awaited<HelloWorldResult>
+    | Promise<HelloWorldResult>;
 }
 
 // :-@-----------------------------------------------------------------------@―:

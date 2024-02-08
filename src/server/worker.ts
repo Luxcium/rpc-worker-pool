@@ -25,6 +25,7 @@ console.log(
     if (!parentPort) {
       throw new Error('parentPort is missing or is undefined');
     }
+
     parentPort.on(
       'message',
 
@@ -45,9 +46,12 @@ console.log(
         }
       )
     );
+
     return 0;
   } catch (error) {
     errorHandler('Error communicating with parentPort:', error);
     return 1;
   }
 })();
+
+console.log('Initialized worker. Listening for messages...');

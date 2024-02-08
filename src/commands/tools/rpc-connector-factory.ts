@@ -18,7 +18,9 @@ const generateRequestId = () => {
 
 // will be considered later no op for the moment to keep the typescript code always valid
 const generateResponseId = generateRequestId;
-export function createRpcConnector<P extends any[], R>(method: string) {
+export function createRpcConnector<P extends [unknown, ...unknown[]], R>(
+  method: string
+) {
   // Function 1: Create a request
   const createRequest = (params: P): RpcRequest<P> => {
     // TODO: Implement this function

@@ -12,132 +12,85 @@ import type {
   WorkerPoolRpc,
 } from '../types';
 import { baseRpcResponseRight } from './API/RPC-serialise';
-import { type Strategies, strategies, supportedStrategies } from './utils';
+import {
+  maxSize,
+  type Strategies,
+  strategies,
+  supportedStrategies,
+} from './utils';
 
-const CORES = cpus().length;
-
-/**
- * Manages a pool of worker threads that can execute remote procedure calls (RPCs) on behalf of the main thread.
- * Will be used as an import to the server.ts file. Ultimately, this should be used to create a pool of worker threads.
- * @remarks
- * This class is intended to be used by the main thread of an application.
- * It creates a pool of worker threads that can execute remote procedure calls (RPCs) on behalf of the main thread.
- */
 export class RpcWorkerPool implements WorkerPool, WorkerPoolRpc {
-  /**
-   * The number of worker threads in the pool. Defaults to the number of CPU cores.
-   */
   private readonly size: number;
 
-  /**
-   * The strategy used to allocate tasks to worker threads. Defaults to 'leastbusy'.
-   * See {@link Strategies} for supported strategies.
-   */
   private readonly strategy: Strategies;
 
-  /**
-   * A boolean indicating whether logging is enabled. Defaults to false.
-   * When logging is enabled, the pool will log messages to the console.
-   */
   private _verbose: boolean;
 
-  /**
-   * An index used to implement round-robin scheduling of tasks. This value is incremented
-   * with each call to `scheduleTask()` and is used to select a worker thread to execute the task.
-   * It is also used to correlate the result of a command execution with the original command.
-   * Each worker thread maintains a map of its in-flight commands, which is used to track
-   * the progress of the commands.
-   */
   private rr_index: number;
 
-  /**
-   * The ID of the next command execution. This value is incremented with each call to
-   * `scheduleTask()` and is used to track which worker thread is executing a given command.
-   * It is also used to correlate the result of a command execution with the original command.
-   * Each worker thread maintains a map of its in-flight commands, which is used to track
-   * the progress of the commands.
-   * The in-flight commands map is keyed by the `internal_job_ref` of the command.
-   * The value of the in-flight command map is the `resolve` function used to resolve the
-   * promise returned by the `scheduleTask()` method.
-   */
   private next_job_ref: number;
 
   /**
-   * An array containing objects representing the worker threads in the pool.
-   * Each object contains the worker thread itself, a map of its in-flight commands, and the worker ID.
-   * The in-flight commands map is keyed by the `internal_job_ref` of the command.
-   * The value of the in-flight command map is the `resolve` function used to resolve the
-   * promise returned by the `scheduleTask()` method. The worker ID is an integer in the range [0, size - 1].
+   * Represents the workers in the RPC worker pool.
+   *
+   * @remarks
+   * This property stores an array of objects, each representing a worker in the RPC worker pool.
+   * Each worker object contains a reference to the actual worker instance.
+   *
+   * @private @readonly
    */
-  private readonly workers: {
+  private readonly employees: {
     worker: Worker;
     in_flight_commands: Map<number, any>;
     employee_number: number;
   }[];
 
-  // The URI of the worker script file.
-  // The number of worker threads to spawn.
-  // The strategy for handling incoming requests.
-  // Whether or not to enable verbose output.
-  /**
-   * Creates a new RpcWorkerPool object.
-   * @param pathURI - The file path of the worker thread code.
-   * @param size - The number of worker threads to create. Defaults to the number of CPU cores.
-   * @param strategy - The strategy used to allocate tasks to worker threads. Defaults to 'leastbusy'.
-   * @param verbosity - A boolean indicating whether logging is enabled. Defaults to false.
-   * When logging is enabled, the pool will log messages to the console.
-   */
   constructor(
-    pathURI: null,
     size = 0,
     strategy: Strategies = strategies.leastbusy,
     verbosity = false
   ) {
-    this.size = size < 0 ? Math.max(CORES + size, 1) : size || CORES;
+    const CORES = cpus().length;
+
+    // Compute the value of the size of the worker pool.
+    // If the size is less than 1, use the number of CPU cores minus the size.
+    // If the size is 0, use the number of CPU cores minus 1.
+    // Otherwise, use the size provided.
+    // The size of the worker pool must be at least 1.
+    this.size = maxSize(size, CORES);
+
     this.strategy = supportedStrategies.has(strategy)
       ? strategy
       : strategies.leastbusy;
-    this._verbose = verbosity;
-    const SCRIPT_FILE_URI = join(
-      `${__dirname}/worker.${
-        existsSync(`${__dirname}/worker.ts`) ? 'ts' : 'js'
-      }`
-    );
-    void pathURI;
+
     this.rr_index = -1;
     this.next_job_ref = 0;
-    this.workers = [];
+    this.employees = [];
+
+    // Creates a worker for each employee in the worker pool.
     for (
       let employee_number = 0;
       employee_number < this.size;
       employee_number++
     ) {
-      // HACK: This is a hack to work around the fact that the Worker constructor does not support ts_node
-      const worker = new Worker(
-        `
-  require('ts-node/register');
-  require(require('worker_threads').workerData.runThisFileInTheWorker);
-`,
-        {
-          eval: true,
-          workerData: {
-            runThisFileInTheWorker: SCRIPT_FILE_URI, // '/path/to/worker-script.ts'
-            workerAsset: employee_number,
-          },
-        }
-      );
+      const worker = tsnodeWorkerGenerator(
+        __dirname,
+        employee_number,
+        Worker
+      ).on('message', (msg: RpcResponse<unknown, unknown>) => {
+        this.onMessageHandler(msg, employee_number);
+      });
 
-      // const worker = new Worker(path);
-      this.workers.push({
+      this.employees.push({
         worker,
         in_flight_commands: new Map(),
         employee_number,
       });
-
-      worker.on('message', (msg: RpcResponse<unknown, unknown>) => {
-        this.onMessageHandler(msg, employee_number);
-      });
     }
+
+    this._verbose = verbosity;
+
+    return this;
   }
 
   async execRpc<ResultsType = unknown>(
@@ -150,14 +103,6 @@ export class RpcWorkerPool implements WorkerPool, WorkerPoolRpc {
     );
   }
 
-  // ++ --------------------------------------------------------------
-  /**
-   * Sends a command to a worker thread for execution.
-   * @param command_name - The name of the command to execute.
-   * @param external_message_identifier - A message ID to associate with the command.
-   * @param args - Optional arguments for the command.
-   * @returns A promise that resolves to the result of the command execution.
-   */
   async exec<O = unknown>(
     command_name: string,
     external_message_identifier: number,
@@ -193,12 +138,6 @@ export class RpcWorkerPool implements WorkerPool, WorkerPoolRpc {
     return promise;
   }
 
-  // ++ --------------------------------------------------------------
-  /**
-   * Returns the worker thread to which the next command should be sent.
-   * @param external_message_identifier - A message ID to associate with the command.
-   * @returns An object representing the worker thread to use.
-   */
   private getWorker(log_message_id = -1): {
     worker: Worker;
     in_flight_commands: Map<number, any>;
@@ -221,7 +160,7 @@ export class RpcWorkerPool implements WorkerPool, WorkerPoolRpc {
         // eslint-disable-next-line no-case-declarations
         let min = Number.POSITIVE_INFINITY;
         for (let i = 0; i < this.size; i++) {
-          const worker = this.workers[i];
+          const worker = this.employees[i];
           if (worker.in_flight_commands.size < min) {
             min = worker.in_flight_commands.size;
             employee_number = i;
@@ -233,24 +172,16 @@ export class RpcWorkerPool implements WorkerPool, WorkerPoolRpc {
         `Worker: ${employee_number + 1} Message id: ${log_message_id || 0}`
       );
 
-    return this.workers[employee_number];
+    return this.employees[employee_number];
   }
 
-  // ++ --------------------------------------------------------------
-
-  /**
-   * This class method is used to handle incoming RPC messages from a worker.
-   *
-   * @param msg The RPC response message to be processed.
-   * @param employee_number The identifier for the worker that sent the message.
-   */
   private onMessageHandler(
     msg: RpcResponse<any>,
     employee_number: number
   ): void {
     // Each worker is represented as an object with the worker instance,
     // a map of in-flight commands, and the worker's employee_number.
-    const worker = this.workers[employee_number];
+    const worker = this.employees[employee_number];
 
     // Convert the message id to a number to use as a reference to the job.
     const internal_job_ref = Number(msg.id);
@@ -282,13 +213,6 @@ export class RpcWorkerPool implements WorkerPool, WorkerPoolRpc {
     }
   }
 
-  /**
-   * Handle the result of the RPC response.
-   *
-   * @param resolve The resolve function of the promise associated with the job.
-   * @param result The result data from the RPC response.
-   * @param external_message_identifier The identifier for the external message.
-   */
   private handleResult(
     resolve: (value: unknown) => void,
     result: unknown,
@@ -298,12 +222,6 @@ export class RpcWorkerPool implements WorkerPool, WorkerPoolRpc {
     resolve(baseRpcResponseRight(result)(external_message_identifier));
   }
 
-  /**
-   * Handle the error of the RPC response.
-   *
-   * @param reject The reject function of the promise associated with the job.
-   * @param error The error data from the RPC response.
-   */
   private handleError(
     reject: (reason?: unknown) => void,
     error: RpcResponseError<unknown> | null
@@ -323,3 +241,35 @@ export class RpcWorkerPool implements WorkerPool, WorkerPoolRpc {
 }
 
 export default RpcWorkerPool;
+
+/**
+ *
+ * // HACK: This is a hack to work around the fact that the
+ * // HACK: Worker constructor does not support ts_node
+ * @param dirname
+ * @param employee_number
+ * @param worker
+ * @returns
+ */
+function tsnodeWorkerGenerator(
+  dirname: string,
+  employee_number: number,
+  worker: typeof Worker
+): Worker {
+  const SCRIPT_FILE_URI = join(
+    `${dirname}/worker.${existsSync(`${dirname}/worker.ts`) ? 'ts' : 'js'}`
+  );
+  return new worker(
+    `
+  require('ts-node/register');
+  require(require('worker_threads').workerData.runThisFileInTheWorker);
+`,
+    {
+      eval: true,
+      workerData: {
+        runThisFileInTheWorker: SCRIPT_FILE_URI, // '/path/to/worker-script.ts'
+        workerAsset: employee_number,
+      },
+    }
+  );
+}

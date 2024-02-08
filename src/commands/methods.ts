@@ -10,18 +10,21 @@ import type { IdsObject, RpcLeft, RpcRequest, RpcRight } from '../types';
 import type { Methods } from '../types/Methods';
 import { getParams } from './tools/getParams';
 
+const DEBUG = 'true' === process.env['DEBUG_MODE'];
 export const methods: Methods<unknown> = {
   async ['hello-world'](rpcRequest: RpcRequest<[IdsObject, ...string[]]>) {
     try {
       const [idsObject, args] = getParams(rpcRequest);
 
-      console.log(
-        chalk.redBright('Hello world will echo back request as recieved:')
-      );
-      console.dir(
-        { ['AS RECIEVED']: true, ...rpcRequest },
-        { colors: true, depth: 10, compact: true }
-      );
+      DEBUG &&
+        console.log(
+          chalk.redBright('Hello world will echo back request as recieved:')
+        );
+      DEBUG &&
+        console.dir(
+          { ['AS RECIEVED']: true, ...rpcRequest },
+          { colors: true, depth: 10, compact: true }
+        );
       const initialTime_0 = performance.now();
 
       const arg0 = Number(args[0]);
@@ -39,7 +42,7 @@ export const methods: Methods<unknown> = {
       const delay_1b = Number.isFinite(arg5) ? arg5 : 10;
 
       const awaited = Boolean('true' === args[6]);
-      const delayed = Boolean('true' === args[6]);
+      const delayed = Boolean('true' === args[7]);
 
       let delayValues_a: DelayValue;
       let delayValues_b: DelayValue;
@@ -85,21 +88,26 @@ export const methods: Methods<unknown> = {
         result,
       };
 
-      console.log(
-        chalk.greenBright('Hello world did echo back request as pre processed:')
-      );
+      DEBUG &&
+        console.log(
+          chalk.greenBright(
+            'Hello world did echo back request as pre processed:'
+          )
+        );
 
       const { external_message_identifier: id } = idsObject;
-      console.dir(
-        { ['AS PREPROCESSED']: true, ...rpcResponse, id },
-        { colors: true, depth: 10, compact: true }
-      );
+      DEBUG &&
+        console.dir(
+          { ['AS PREPROCESSED']: true, ...rpcResponse, id },
+          { colors: true, depth: 10, compact: true }
+        );
 
-      console.log(
-        chalk.yellowBright(
-          'Hello world returning back the value now (to the worker and out):'
-        )
-      );
+      DEBUG &&
+        console.log(
+          chalk.yellowBright(
+            'Hello world returning back the value now (to the worker and out):'
+          )
+        );
 
       // this delay() call below is very important to be noticed it is
       // what makes the diference beteween full output when it is not

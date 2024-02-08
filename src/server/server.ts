@@ -30,7 +30,7 @@ const {
 
 // #region ++ CREATE POOL INSTANCES ---------------------------------↓
 // ## WILL CREATE WORKER POOL INSTANCE ―――――――――――――――――――――――――――――――
-const workerPool = new RpcWorkerPool(null, threads, strategy, VERBOSE);
+const workerPool = new RpcWorkerPool(threads, strategy, VERBOSE);
 const elementCounter = { messageSeq: 0, actorTracking: 0 };
 const messageMap = new Map<number, ServerResponse>();
 type Data = { messageSeq: number; command_name: string; args: string[] };
