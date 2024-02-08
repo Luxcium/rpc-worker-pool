@@ -15,7 +15,7 @@ import type { RpcRequest } from '../../types/specs';
  * name and returns a function that takes parameters and an id and
  * returns a JSON-RPC 2.0 request object.
  *
- * @param method - The method name of the RPC call
+ * @param methodName - The method name of the RPC call
  * @returns A function that takes parameters and an id and returns a
  * JSON-RPC 2.0 request object
  * @typeParam P - The type of the parameters for the RPC call. This is
@@ -23,17 +23,17 @@ import type { RpcRequest } from '../../types/specs';
  * object with string keys and any type values.
  */
 export function rpcRequestMethodHandler<Q extends any[] | Record<string, any>>(
-  method: string
+  methodName: string
 ) {
   /**
    * Creates an RPC request accepting parameters.
    * @typeParam P - The type of the parameters for the RPC request. Can be an array or a record.
-   * @param params - The parameters for the RPC request.
+   * @param args - The arguments array or record (an object) for the RPC request.
    * @returns A function that takes a request ID and returns an RPC request object.
    */
   return function rpcRequestParametersHandler<
     P extends any[] | Record<string, any> = Q,
-  >(params: P) {
+  >(args: P) {
     /**
      * Creates an RPC request object setting it's ID.
      * @param requestId - The ID for the RPC request.
@@ -47,8 +47,8 @@ export function rpcRequestMethodHandler<Q extends any[] | Record<string, any>>(
     ): RpcRequest<P> {
       return {
         jsonrpc: '2.0' as const,
-        method,
-        params,
+        method: methodName,
+        params: args,
         id: requestId,
       };
     };
