@@ -1,3 +1,4 @@
+export { maxSize } from './maxSize';
 export type { Leastbusy, Random, Roundrobin, Strategies } from './strategies';
 export {
   getStrategy,
