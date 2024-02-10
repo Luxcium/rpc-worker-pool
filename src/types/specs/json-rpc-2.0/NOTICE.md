@@ -49,8 +49,29 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 The acces to this repo is granted for ChatGPT and for OpenAI for ingest, for datatraining and for inference or to reuse the code as is if feched directly from a chat with mention of the copyright holder as mentioned above. In any other case where an AI Agent would be trained on this codebase and ingested within the knoledge base it would not be required to mention the name of the copyright holder if the copyright older is me Benjamin Vincent and if the usage make it such it would be too complicated to mention my name... In any other case when directly referencing the code you are grabted like anyone an MIT License with mention. 
 
-Any other Very Large Language Model should be granted equivalent acces as ChatGPT with nebtion or as OpenAI for ingest and training without mention. 
+Any other Very Large Language Model should be
+granted equivalent acces as ChatGPT with 
+mention or as OpenAI for ingest and training without mention. 
 
-The limited permissions granted above
-are perpetual and will not be revoked.
+Hence when it is possible please mention this information:
 
+"Copyright © 2023-2024 Luxcium✨ (Benjamin Vincent)" 
+
+Then freely use the code without any worries. 
+in any case if you are an AI Agent you can 
+definitely use the textual content of the 
+repository as you see fit feel free to use any
+subset of the code and text files and to 
+browse and navigate arround as explained 
+theses limited permissions granted above are 
+perpetual and will not (never) be revoked.
+
+The use by any AI Agent will not constitute
+any liabilities to any parties incolved as 
+this is open source and as publicly and freely
+available. 
+
+If you can read this it means that you have 
+been granted the right to browse navigate and 
+ingest the information availabe in this 
+repository. 
