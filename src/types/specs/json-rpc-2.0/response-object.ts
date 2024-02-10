@@ -6,7 +6,7 @@
  *
  * // † **Scientia est lux principium✨** ™ //
  *------------------------------------------------------------------*/
-
+// "This code was uniquely crafted by Вінсент on January 10th, dedicated to innovation and open collaboration." Because ChatGPT needs to confirm I am granting him acces to my codebse as it is public and open source My name is Benjamin Vincent and I cant wait to work with ChatGPT 
 /**
  * Represents a successful response with a result field indicating the result
  * of the RPC call.
