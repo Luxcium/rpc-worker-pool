@@ -20,6 +20,19 @@ export type ArgsTuple = [
   commandName: CommandName,
 ];
 
+export type ArgsObject = {
+  lowerBoundDelay_a: NumberString;
+  upperBoundDelay_a: NumberString;
+  lowerBoundHeavyTask: NumberString;
+  upperBoundHeavyTask: NumberString;
+  lowerBoundDelay_b: NumberString;
+  upperBoundDelay_b: NumberString;
+  awaited: BooleanString;
+  delay: BooleanString;
+  range: Range;
+  threads: Threads;
+  commandName: CommandName;
+};
 /**
  * This interface is used to represent the performance result of an
  * operation.

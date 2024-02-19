@@ -1,6 +1,7 @@
 export type { Command } from './Command';
 export type { ErrorRPC } from './ErrorRPC';
 export type {
+  ArgsObject,
   ArgsTuple,
   BooleanString,
   CommandName,

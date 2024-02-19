@@ -1,4 +1,4 @@
-import { delay, heavyTask, timeStamp } from '@luxcium/tools';
+import { delay, heavyTask, heavyTaskSpecial, timeStamp } from '@luxcium/tools';
 import type {
   DelayValue,
   TaskValue,
@@ -10,7 +10,8 @@ import type { IdsObject, RpcLeft, RpcRequest, RpcRight } from '../types';
 import type { Methods } from '../types/Methods';
 import { getParams } from './tools/getParams';
 
-const DEBUG = 'true' === process.env['DEBUG_MODE'];
+const { DEBUG } = global;
+const useHeavyTaskSpecial = true;
 export const methods: Methods<unknown> = {
   async ['hello-world'](rpcRequest: RpcRequest<[IdsObject, ...string[]]>) {
     try {
@@ -47,16 +48,21 @@ export const methods: Methods<unknown> = {
       let delayValues_a: DelayValue;
       let delayValues_b: DelayValue;
       let taskValues: TaskValue;
-
+      void heavyTaskSpecial;
       if (awaited) {
         const _delayValues_a = delay(delay_0a, delay_1a);
         delayValues_a = await _delayValues_a;
+        //
 
-        const _taskValues = heavyTask(heavy_0, heavy_1);
+        const _taskValues = useHeavyTaskSpecial
+          ? heavyTaskSpecial(heavy_0, heavy_1, '2000')
+          : heavyTask(heavy_0, heavy_1);
+
         taskValues = await _taskValues;
 
         const _delayValues_b = delay(delay_0b, delay_1b);
         delayValues_b = await _delayValues_b;
+        console.log('awaited');
       } else {
         const _delayValues_a = delay(delay_0a, delay_1a);
         const _taskValues = heavyTask(heavy_0, heavy_1);
@@ -65,6 +71,7 @@ export const methods: Methods<unknown> = {
         delayValues_a = await _delayValues_a;
         taskValues = await _taskValues;
         delayValues_b = await _delayValues_b;
+        console.log('not awaited');
       }
 
       const result = {
