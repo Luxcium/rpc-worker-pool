@@ -1,5 +1,5 @@
 'use strict';
-
+// src/server/worker.ts
 // #!! Primary worker definition.
 // #!! Consumed by the RpcWorkerPool class via path the to this file.
 

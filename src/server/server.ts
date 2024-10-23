@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// src/server/server.ts
 import type { ServerResponse } from 'node:http';
 import { createServer as createHTTP_Server } from 'node:http';
 
