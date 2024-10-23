@@ -1,8 +1,5 @@
+import type { DelayValue, TaskValue } from '@luxcium/tools';
 import { delay, heavyTask, heavyTaskSpecial, timeStamp } from '@luxcium/tools';
-import type {
-  DelayValue,
-  TaskValue,
-} from '@luxcium/tools/lib/typings/delay/delay';
 import chalk from 'chalk';
 
 import { APPLICATION_ERROR } from '../server/API';

@@ -11,7 +11,7 @@ import type { RpcRequest, RpcResponse } from '../types/specs';
 import { INTERNAL_ERROR } from './API';
 import { asyncOnMessageWrap } from './job/asyncOnMessageWrap';
 import { errorHandler } from './job/errorHandler';
-
+methods;
 const workerAsset = workerData.workerAsset;
 
 console.log(
