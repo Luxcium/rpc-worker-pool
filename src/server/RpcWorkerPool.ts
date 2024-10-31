@@ -252,7 +252,7 @@ export default RpcWorkerPool;
  * @param worker
  * @returns
  */
-function tsnodeWorkerGenerator(
+export function tsnodeWorkerGenerator(
   dirname: string,
   employee_number: number,
   worker: typeof Worker

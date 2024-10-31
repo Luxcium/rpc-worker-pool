@@ -1,10 +1,13 @@
-'use strict';
-// src/server/RpcWorkerPool.ts
-import { existsSync } from 'node:fs';
-import { cpus } from 'node:os';
-import { join } from 'node:path';
 import { Worker } from 'node:worker_threads';
 
+import { cpus } from 'os';
+import { baseRpcResponseRight } from '../server/API/RPC-serialise';
+import {
+  maxSize,
+  type Strategies,
+  strategies,
+  supportedStrategies,
+} from '../server/utils';
 import type {
   RpcRequest,
   RpcResponse,
@@ -12,14 +15,7 @@ import type {
   WorkerPool,
   WorkerPoolRpc,
 } from '../types';
-import { baseRpcResponseRight } from './API/RPC-serialise';
-import {
-  maxSize,
-  type Strategies,
-  strategies,
-  supportedStrategies,
-} from './utils';
-
+import { tsnodeWorkerGenerator } from './workerGenerator';
 export class RpcWorkerPool implements WorkerPool, WorkerPoolRpc {
   private readonly size: number;
 
@@ -242,35 +238,3 @@ export class RpcWorkerPool implements WorkerPool, WorkerPoolRpc {
 }
 
 export default RpcWorkerPool;
-
-/**
- *
- * // HACK: This is a hack to work around the fact that the
- * // HACK: Worker constructor does not support ts_node
- * @param dirname
- * @param employee_number
- * @param worker
- * @returns
- */
-function tsnodeWorkerGenerator(
-  dirname: string,
-  employee_number: number,
-  worker: typeof Worker
-): Worker {
-  const SCRIPT_FILE_URI = join(
-    `${dirname}/worker.${existsSync(`${dirname}/worker.ts`) ? 'ts' : 'js'}`
-  );
-  return new worker(
-    `
-  require('ts-node/register');
-  require(require('worker_threads').workerData.runThisFileInTheWorker);
-`,
-    {
-      eval: true,
-      workerData: {
-        runThisFileInTheWorker: SCRIPT_FILE_URI, // '/path/to/worker-script.ts'
-        workerAsset: employee_number,
-      },
-    }
-  );
-}
