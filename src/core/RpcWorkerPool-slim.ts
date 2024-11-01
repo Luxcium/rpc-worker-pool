@@ -191,7 +191,9 @@ export class RpcWorkerPool extends Rpc implements WorkerPool, WorkerPoolRpc {
       } catch (error: any) {
         retries -= 1;
         console.error('Failed to post message to worker:', error);
-        if (retries === 0) {
+        if (retries > 0) {
+          await new Promise(resolve => setTimeout(resolve, 1000)); // Delay before retry
+        } else {
           throw new Error(
             `Failed to post message to worker after multiple attempts: ${error.message}`
           );
@@ -206,20 +208,7 @@ export class RpcWorkerPool extends Rpc implements WorkerPool, WorkerPoolRpc {
     in_flight_commands: Map<number, any>;
     employee_number: number;
   } {
-    let employee_number = 0;
-    switch (this.strategy) {
-      case 'random':
-        employee_number = Math.floor(Math.random() * this.size);
-        break;
-      case 'roundrobin':
-        this.rr_index = (this.rr_index + 1) % this.size;
-        employee_number = this.rr_index;
-        break;
-      case 'leastbusy':
-      default:
-        employee_number = this.employeesSortedByLoad[0].employee_number;
-        break;
-    }
+    let employee_number = this.selectWorker();
     if (super.isVerbose) {
       console.log(
         `Worker: ${employee_number + 1} Message id: ${log_message_id || 0}`
@@ -227,6 +216,32 @@ export class RpcWorkerPool extends Rpc implements WorkerPool, WorkerPoolRpc {
     }
     return this.employees[employee_number];
   }
+
+  private selectWorker(): number {
+    switch (this.strategy) {
+      case 'random':
+        return this.getRandomWorker();
+      case 'roundrobin':
+        return this.getRoundRobinWorker();
+      case 'leastbusy':
+      default:
+        return this.getLeastBusyWorker();
+    }
+  }
+
+  private getRandomWorker(): number {
+    return Math.floor(Math.random() * this.size);
+  }
+
+  private getRoundRobinWorker(): number {
+    this.rr_index = (this.rr_index + 1) % this.size;
+    return this.rr_index;
+  }
+
+  private getLeastBusyWorker(): number {
+    return this.employeesSortedByLoad[0].employee_number;
+  }
+
   private onMessageHandler(
     msg: RpcResponse<any>,
     employee_number: number
