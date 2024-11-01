@@ -104,12 +104,23 @@ abstract class Rpc {
   }
 }
 export class RpcWorkerPool extends Rpc implements WorkerPool, WorkerPoolRpc {
+  private workerGenerator: (
+    dirname: string,
+    employeeNumber: number,
+    workerType: typeof Worker
+  ) => Worker;
+  private workerSelectionStrategy: WorkerSelectionStrategy;
+
   constructor(
     size = 0,
     strategy: Strategies = strategies.leastbusy,
-    verbosity = false
+    verbosity = false,
+    workerGenerator = tsnodeWorkerGenerator,
+    workerSelectionStrategy: WorkerSelectionStrategy = new LeastBusySelectionStrategy()
   ) {
     super({ verbosity, size, strategy });
+    this.workerGenerator = workerGenerator;
+    this.workerSelectionStrategy = workerSelectionStrategy;
     this.createWorkers();
   }
   private createWorkers(): void {
@@ -118,7 +129,7 @@ export class RpcWorkerPool extends Rpc implements WorkerPool, WorkerPoolRpc {
       employee_number < this.size;
       employee_number++
     ) {
-      const worker = tsnodeWorkerGenerator(
+      const worker = this.workerGenerator(
         __dirname,
         employee_number,
         Worker
@@ -208,38 +219,15 @@ export class RpcWorkerPool extends Rpc implements WorkerPool, WorkerPoolRpc {
     in_flight_commands: Map<number, any>;
     employee_number: number;
   } {
-    let employee_number = this.selectWorker();
+    let employee_number = this.workerSelectionStrategy.selectWorker(
+      this.employees
+    );
     if (super.isVerbose) {
       console.log(
         `Worker: ${employee_number + 1} Message id: ${log_message_id || 0}`
       );
     }
     return this.employees[employee_number];
-  }
-
-  private selectWorker(): number {
-    switch (this.strategy) {
-      case 'random':
-        return this.getRandomWorker();
-      case 'roundrobin':
-        return this.getRoundRobinWorker();
-      case 'leastbusy':
-      default:
-        return this.getLeastBusyWorker();
-    }
-  }
-
-  private getRandomWorker(): number {
-    return Math.floor(Math.random() * this.size);
-  }
-
-  private getRoundRobinWorker(): number {
-    this.rr_index = (this.rr_index + 1) % this.size;
-    return this.rr_index;
-  }
-
-  private getLeastBusyWorker(): number {
-    return this.employeesSortedByLoad[0].employee_number;
   }
 
   private onMessageHandler(
@@ -267,6 +255,35 @@ export class RpcWorkerPool extends Rpc implements WorkerPool, WorkerPoolRpc {
       Rpc.handleError(reject, error);
     }
     worker.in_flight_commands.delete(internal_job_ref);
+  }
+}
+
+interface WorkerSelectionStrategy {
+  selectWorker(
+    workers: {
+      worker: Worker;
+      in_flight_commands: Map<number, any>;
+      employee_number: number;
+    }[]
+  ): number;
+}
+
+class LeastBusySelectionStrategy implements WorkerSelectionStrategy {
+  selectWorker(
+    workers: {
+      worker: Worker;
+      in_flight_commands: Map<number, any>;
+      employee_number: number;
+    }[]
+  ): number {
+    return workers.reduce(
+      (leastBusyIndex, worker, index) =>
+        worker.in_flight_commands.size <
+        workers[leastBusyIndex].in_flight_commands.size
+          ? index
+          : leastBusyIndex,
+      0
+    );
   }
 }
 export default RpcWorkerPool;
