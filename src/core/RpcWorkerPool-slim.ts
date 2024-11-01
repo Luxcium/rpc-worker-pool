@@ -103,7 +103,32 @@ abstract class Rpc {
     this._verbose = value;
   }
 }
-export class RpcWorkerPool extends Rpc implements WorkerPool, WorkerPoolRpc {
+
+// Segregate interfaces into more focused and client-specific ones
+interface WorkerManagement {
+  createWorkers(): void;
+  getWorker(log_message_id?: number): {
+    worker: Worker;
+    in_flight_commands: Map<number, any>;
+    employee_number: number;
+  };
+}
+
+interface RpcExecution {
+  execRpc<ResultsType = unknown>(
+    rpcRequest: RpcRequest<string[]>
+  ): Promise<ResultsType>;
+  exec<O = unknown>(
+    command_name: string,
+    external_message_identifier: number,
+    ...args: string[]
+  ): Promise<O>;
+}
+
+export class RpcWorkerPool
+  extends Rpc
+  implements WorkerPool, WorkerPoolRpc, WorkerManagement, RpcExecution
+{
   private workerGenerator: (
     dirname: string,
     employeeNumber: number,
@@ -123,7 +148,7 @@ export class RpcWorkerPool extends Rpc implements WorkerPool, WorkerPoolRpc {
     this.workerSelectionStrategy = workerSelectionStrategy;
     this.createWorkers();
   }
-  private createWorkers(): void {
+  public createWorkers(): void {
     for (
       let employee_number = 0;
       employee_number < this.size;
@@ -160,7 +185,7 @@ export class RpcWorkerPool extends Rpc implements WorkerPool, WorkerPoolRpc {
     }
     this.employeesSortedByLoad.splice(index, 0, employee);
   }
-  async execRpc<ResultsType = unknown>(
+  public async execRpc<ResultsType = unknown>(
     rpcRequest: RpcRequest<string[]>
   ): Promise<ResultsType> {
     return this.exec<ResultsType>(
@@ -169,7 +194,7 @@ export class RpcWorkerPool extends Rpc implements WorkerPool, WorkerPoolRpc {
       ...(rpcRequest.params || [])
     );
   }
-  async exec<O = unknown>(
+  public async exec<O = unknown>(
     command_name: string,
     external_message_identifier: number,
     ...args: string[]
@@ -214,7 +239,7 @@ export class RpcWorkerPool extends Rpc implements WorkerPool, WorkerPoolRpc {
     return promise;
   }
 
-  private getWorker(log_message_id = -1): {
+  public getWorker(log_message_id = -1): {
     worker: Worker;
     in_flight_commands: Map<number, any>;
     employee_number: number;
