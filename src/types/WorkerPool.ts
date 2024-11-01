@@ -4,12 +4,12 @@ import type { RpcRequest, RpcResponse } from './specs';
 
 export interface WorkerPool {
   exec: WorkerPoolExec;
-  verbosity: boolean;
+  verbosity?: boolean;
 }
 export interface WorkerPoolRpc {
   execRpc: WorkerPoolExecRpcRequest;
-  verbosity: boolean;
-} // RpcRequest
+  verbosity?: boolean;
+}
 
 type WorkerPoolExecRpcRequest = <O = unknown>(
   rpcRequest: RpcRequest<string[]>
