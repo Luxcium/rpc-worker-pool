@@ -135,17 +135,23 @@ export class RpcWorkerPool
     workerType: typeof Worker
   ) => Worker;
   private workerSelectionStrategy: WorkerSelectionStrategy;
+  private maxRetries: number;
+  private retryDelay: number;
 
   constructor(
     size = 0,
     strategy: Strategies = strategies.leastbusy,
     verbosity = false,
     workerGenerator = tsnodeWorkerGenerator,
-    workerSelectionStrategy: WorkerSelectionStrategy = new LeastBusySelectionStrategy()
+    workerSelectionStrategy: WorkerSelectionStrategy = new LeastBusySelectionStrategy(),
+    maxRetries = 3,
+    retryDelay = 1000
   ) {
     super({ verbosity, size, strategy });
     this.workerGenerator = workerGenerator;
     this.workerSelectionStrategy = workerSelectionStrategy;
+    this.maxRetries = maxRetries;
+    this.retryDelay = retryDelay;
     this.createWorkers();
   }
   public createWorkers(): void {
@@ -219,16 +225,28 @@ export class RpcWorkerPool
         ...args,
       ],
     };
-    let retries = 3;
+    await this.retryPostMessage(employee, rpcRequest);
+    return promise;
+  }
+
+  private async retryPostMessage(
+    employee: {
+      worker: Worker;
+      in_flight_commands: Map<number, any>;
+      employee_number: number;
+    },
+    rpcRequest: RpcRequest<{}>
+  ): Promise<void> {
+    let retries = this.maxRetries;
     while (retries > 0) {
       try {
         employee.worker.postMessage(rpcRequest);
-        break;
+        return;
       } catch (error: any) {
         retries -= 1;
         console.error('Failed to post message to worker:', error);
         if (retries > 0) {
-          await new Promise(resolve => setTimeout(resolve, 1000)); // Delay before retry
+          await new Promise(resolve => setTimeout(resolve, this.retryDelay));
         } else {
           throw new Error(
             `Failed to post message to worker after multiple attempts: ${error.message}`
@@ -236,7 +254,6 @@ export class RpcWorkerPool
         }
       }
     }
-    return promise;
   }
 
   public getWorker(log_message_id = -1): {
