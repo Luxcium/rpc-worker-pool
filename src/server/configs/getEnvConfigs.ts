@@ -1,5 +1,5 @@
+// src/server/configs/getDefaultConfigs.ts
 import type { IEnvConfigs } from './types/IEnvConfigs';
-
 export function getEnvConfigs(): IEnvConfigs {
   return {
     httpEndpointEnv: process.env['HTTP_ENDPOINT'] ?? '',

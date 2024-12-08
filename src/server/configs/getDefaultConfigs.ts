@@ -1,5 +1,5 @@
+// src/server/configs/getDefaultConfigs.ts
 import type { IDefaultsConfigs } from './types/IDefaultsConfigs';
-
 export function getDefaultConfigs(): IDefaultsConfigs {
   return {
     HTTP_ENDPOINT: '0.0.0.0',
