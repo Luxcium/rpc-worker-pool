@@ -9,23 +9,21 @@ import { methods } from '../commands';
 import type { IdsObject } from '../types';
 import type { RpcRequest, RpcResponse } from '../types/specs';
 import { INTERNAL_ERROR } from './API';
-import { asyncOnMessageWrap } from './job/asyncOnMessageWrap';
-import { errorHandler } from './job/errorHandler';
-methods;
+import { asyncOnMessageWrap, errorHandler } from './job/';
+
+const VERBOSE = true;
 const workerAsset = workerData.workerAsset;
 
-console.log(
-  `WORKER(${threadId - 1}):${
-    1 === threadId - workerAsset ? '' : ` EmployeeID: '${workerAsset}'`
+VERBOSE && console.log(
+  `WORKER(${threadId - 1}):${1 === threadId - workerAsset ? '' : ` EmployeeID: '${workerAsset}'`
   } from ${__filename}`
 );
 
-(function MAIN(): number {
+void (function MAIN(): number {
   try {
     if (!parentPort) {
       throw new Error('parentPort is missing or is undefined');
     }
-
     parentPort.on(
       'message',
 
