@@ -19,6 +19,11 @@ VERBOSE && console.log(
   } from ${__filename}`
 );
 
+/**
+ * Main function that initializes the worker and sets up message handling.
+ * This function is immediately invoked to start the worker.
+ * @returns {number} - Exit code (0 for success, 1 for error)
+ */
 void (function MAIN(): number {
   try {
     if (!parentPort) {
@@ -28,6 +33,11 @@ void (function MAIN(): number {
       'message',
 
       asyncOnMessageWrap(
+        /**
+         * Handles incoming RPC requests and executes the corresponding method.
+         * @param {RpcRequest<[IdsObject, ...string[]]>} rpcRequest - The RPC request containing method and parameters.
+         * @returns {Promise<RpcResponse<unknown>>} - The RPC response with the result or error.
+         */
         async (
           rpcRequest: RpcRequest<[IdsObject, ...string[]]>
         ): Promise<RpcResponse<unknown>> => {
