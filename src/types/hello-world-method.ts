@@ -1,3 +1,4 @@
+// src/types/hello-world-method.ts
 import type { RpcRight } from '.';
 
 export type Range = `range(${number}, ${number})`;
@@ -78,8 +79,8 @@ export interface HelloWorldResult extends RpcRight<Result> {
 
 export interface HelloWorldWorker {
   '@helloWorldWorkerResult→':
-    | Awaited<HelloWorldResult>
-    | Promise<HelloWorldResult>;
+  | Awaited<HelloWorldResult>
+  | Promise<HelloWorldResult>;
 }
 
 // :-@-----------------------------------------------------------------------@―:

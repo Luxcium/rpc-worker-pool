@@ -1,3 +1,4 @@
+// src/types/index.ts
 export type { Command } from './Command';
 export type { ErrorRPC } from './ErrorRPC';
 export type {
@@ -14,7 +15,7 @@ export type {
   Result,
   TaskStepsResult,
   TaskValue,
-  Threads,
+  Threads
 } from './hello-world-method';
 export type { IdsObject } from './IdsObject';
 export type { MessageRPC } from './MessageRPC';
@@ -27,7 +28,7 @@ export type {
   RpcRequest,
   RpcResponse,
   RpcResponseError,
-  RpcRight,
+  RpcRight
 } from './specs';
 export type { WorkerPool, WorkerPoolRpc } from './WorkerPool';
 export type { WraperFunction } from './WraperFunction';

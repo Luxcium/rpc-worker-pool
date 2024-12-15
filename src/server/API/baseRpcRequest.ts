@@ -5,6 +5,9 @@
  *
  * @packageDocumentation
  */
+
+// src/server/API/baseRpcRequest.ts
+
 import type { RpcRequest } from '../../types/specs';
 
 export type RpcArgs = Record<string, unknown> | [unknown, ...unknown[]];
@@ -56,8 +59,8 @@ export function rpcRequestMethodHandler<Q extends RpcArgs>(methodName: string) {
 
 export const createRpcRequest =
   <Q extends RpcArgs>(methodName: string) =>
-  <P extends RpcArgs = Q>(args: P, Id: numberStr): RpcRequest<P> =>
-    rpcRequestMethodHandler<Q>(methodName)<P>(args)(Id);
+    <P extends RpcArgs = Q>(args: P, Id: numberStr): RpcRequest<P> =>
+      rpcRequestMethodHandler<Q>(methodName)<P>(args)(Id);
 
 export type numberStr = number | `${number}`;
 export type NoInfer<T> = [T][T extends unknown ? 0 : never];

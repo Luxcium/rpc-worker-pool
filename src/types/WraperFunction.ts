@@ -1,4 +1,5 @@
 'use strict';
+// src/types/WraperFunction.ts
 import type { RpcRequest } from './specs';
 
 /**

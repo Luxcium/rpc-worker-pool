@@ -5,6 +5,7 @@
  * @param id
  * @param data
  */
+// src/server/API/RPC-errors.ts
 
 import type { RpcRight } from '../../types';
 
@@ -159,11 +160,11 @@ export function baseRpcResponseRight<R>(result: R) {
 export function unwrapRpcResponseRight<R = unknown>(
   response: RpcRight<R>
 ): [
-  result: R,
-  id: number | string | null,
-  isJsonRpc: boolean,
-  originalResponse: RpcRight<R>,
-] {
+    result: R,
+    id: number | string | null,
+    isJsonRpc: boolean,
+    originalResponse: RpcRight<R>,
+  ] {
   const { result, id, jsonrpc } = response;
   return [result, id, '2.0' === jsonrpc, response];
 }

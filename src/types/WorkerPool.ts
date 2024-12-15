@@ -1,3 +1,4 @@
+// src/types/WorkerPool.ts
 import type { Worker } from 'node:worker_threads';
 
 import type { RpcRequest, RpcResponse } from './specs';

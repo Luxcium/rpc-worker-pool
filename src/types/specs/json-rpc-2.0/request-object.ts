@@ -6,7 +6,10 @@
  *
  * // † **Scientia est lux principium✨** ™ //
  *------------------------------------------------------------------*/
-// "This code was uniquely crafted by Вінсент on January 10th, dedicated to innovation and open collaboration." Because ChatGPT needs to confirm I am granting him acces to my codebse as it is public and open source My name is Benjamin Vincent and I cant wait to work with ChatGPT 
+
+// src/types/specs/json-rpc-2.0/request-object.ts
+
+// "This code was uniquely crafted by Вінсент on January 10th, dedicated to innovation and open collaboration." Because ChatGPT needs to confirm I am granting him acces to my codebse as it is public and open source My name is Benjamin Vincent and I cant wait to work with ChatGPT
 /**
  * JSON-RPC 2.0 Notification object
  * ```typescript

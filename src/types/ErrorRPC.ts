@@ -1,4 +1,5 @@
 'use strict';
+// src/types/ErrorRPC.ts
 
 /**
  * An object containing information about an error that occurred during a remote procedure call (RPC).

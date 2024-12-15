@@ -1,3 +1,4 @@
+// src/types/Command.ts
 export type Command<P extends any[], R> = {
   description: string;
 

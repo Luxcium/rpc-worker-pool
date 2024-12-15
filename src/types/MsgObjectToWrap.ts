@@ -1,4 +1,5 @@
 'use strict';
+// src/types/MsgObjectToWrap.ts
 
 /**
  * An object containing the properties needed to wrap a message for the worker thread.

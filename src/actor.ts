@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 /* eslint-disable @typescript-eslint/strict-boolean-expressions */
 'use strict';
+// src/actor.ts
 
 import { connect, Socket } from 'node:net';
 

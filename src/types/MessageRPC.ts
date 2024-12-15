@@ -1,4 +1,5 @@
 'use strict';
+// src/types/MessageRPC.ts
 import type { ErrorRPC } from './ErrorRPC';
 
 /**

@@ -1,3 +1,4 @@
+// src/server/API/RPC-serialise.ts
 import type { InspectOptions } from 'util';
 
 import type {
@@ -20,11 +21,11 @@ export function baseRpcResponseRight<R>(result: R) {
 export function unwrapRpcResponseRight<R = unknown>(
   response: RpcRight<R>
 ): [
-  result: R,
-  id: number | string | null,
-  jsonrpc: boolean,
-  rpcResponseRight: RpcRight<R>,
-] {
+    result: R,
+    id: number | string | null,
+    jsonrpc: boolean,
+    rpcResponseRight: RpcRight<R>,
+  ] {
   const { result, id, jsonrpc } = response;
   return [result, id, '2.0' === jsonrpc, response];
 }
@@ -46,12 +47,12 @@ export function baseRpcResponseLeft(error: RpcResponseError) {
 export function unwrapRpcResponseLeft<E = unknown>(
   response: RpcLeft<E>
 ): [
-  error: RpcResponseError<E>,
-  unwrapedRpcError: UnwrapedRpcError<E>,
-  id: number | string | null,
-  jsonrpc: boolean,
-  rpcResponseLeft: RpcLeft<E>,
-] {
+    error: RpcResponseError<E>,
+    unwrapedRpcError: UnwrapedRpcError<E>,
+    id: number | string | null,
+    jsonrpc: boolean,
+    rpcResponseLeft: RpcLeft<E>,
+  ] {
   const { error, id, jsonrpc } = response;
   return [error, unwrapRpcError(error), id, '2.0' === jsonrpc, response];
 }
@@ -141,12 +142,12 @@ export function unwrapRpcNotification<
 >(
   rpcNotification: RpcNotification<N>
 ): [
-  method: string,
-  params: any,
-  id: null,
-  jsonrpc: boolean,
-  rpcNotification: RpcNotification<N>,
-] {
+    method: string,
+    params: any,
+    id: null,
+    jsonrpc: boolean,
+    rpcNotification: RpcNotification<N>,
+  ] {
   const { method, params, jsonrpc } = rpcNotification;
   return [method, params, null, '2.0' === jsonrpc, rpcNotification];
 }
@@ -172,12 +173,12 @@ export type { UnwrapedRpcNotification };
 export function unwrapRpcRequest<Q extends any[] | Record<string, any> = any>(
   request: RpcRequest<Q>
 ): [
-  method: string,
-  params: Q | undefined,
-  id: number | string | null,
-  jsonrpc: boolean,
-  rpcRequest: RpcRequest<Q>,
-] {
+    method: string,
+    params: Q | undefined,
+    id: number | string | null,
+    jsonrpc: boolean,
+    rpcRequest: RpcRequest<Q>,
+  ] {
   const { method, params, id, jsonrpc } = request;
   return [method, params, id, '2.0' === jsonrpc, request];
 }

@@ -6,16 +6,17 @@
  *
  * // † **Scientia est lux principium✨** ™ //
  *------------------------------------------------------------------*/
+// src/types/specs/index.ts
 
 export type {
   RpcNotification,
-  RpcRequest,
+  RpcRequest
 } from './json-rpc-2.0/request-object';
 export type {
   RpcLeft,
   RpcResponse,
   RpcResponseError,
-  RpcRight,
+  RpcRight
 } from './json-rpc-2.0/response-object';
 
 /*

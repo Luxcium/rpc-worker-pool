@@ -1,3 +1,5 @@
+// src/server/API/index.ts
+// BARREL FILE - DO NOT INCLUDE IMPLEMENTATION DETAILS IN THIS FILE
 import { RPC_ERRORS_FNS } from './RPC-errors';
 
 export { rpcRequestMethodHandler as baseRpcRequest } from './baseRpcRequest';
@@ -9,14 +11,12 @@ export {
   rpcId,
   rpcMethod,
   rpcParams,
-  swapRpcId,
-  type UnwrapedRpcNotification,
-  unwrapRpcError,
+  swapRpcId, unwrapRpcError,
   unwrapRpcNotification,
   unwrapRpcRequest,
   unwrapRpcResponse,
   unwrapRpcResponseLeft,
-  unwrapRpcResponseRight,
+  unwrapRpcResponseRight, type UnwrapedRpcNotification
 } from './RPC-serialise';
 export { RPC_ERRORS_FNS };
 export const {

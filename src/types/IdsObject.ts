@@ -1,3 +1,4 @@
+// src/types/IdsObject.ts
 export interface IdsObject {
   external_message_identifier: number;
   employee_number: number;

@@ -1,3 +1,4 @@
+// src/types/IUnbox.d.ts
 /** `IUnbox<T>` Unboxes the value `T` from inside Functors ({@link IMap})
  *
  * @typeParam T Type `T` is treated as a scalar value and may contain

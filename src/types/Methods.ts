@@ -1,3 +1,4 @@
+// src/types/Methods.ts
 import type { IdsObject, RpcRequest, RpcResponse } from '.';
 
 // prettier-ignore

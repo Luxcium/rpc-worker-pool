@@ -1,10 +1,11 @@
+// src/commands/methods.ts
+
 import type { DelayValue, TaskValue } from '@luxcium/tools';
 import { delay, heavyTask, heavyTaskSpecial, timeStamp } from '@luxcium/tools';
 import chalk from 'chalk';
 
 import { APPLICATION_ERROR } from '../server/API';
-import type { IdsObject, RpcLeft, RpcRequest, RpcRight } from '../types';
-import type { Methods } from '../types/Methods';
+import type { IdsObject, Methods, RpcLeft, RpcRequest, RpcRight } from '../types';
 import { getParams } from './tools/getParams';
 
 const { DEBUG } = global;

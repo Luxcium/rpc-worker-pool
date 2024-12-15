@@ -2,8 +2,7 @@
 import { parentPort } from 'node:worker_threads';
 
 import { getParams } from '../../commands/tools/getParams';
-import type { IdsObject } from '../../types';
-import type { RpcRequest, RpcResponse } from '../../types/specs';
+import type { IdsObject, RpcRequest, RpcResponse } from '../../types';
 import { swapRpcId } from '../API';
 import { errorHandler } from './errorHandler';
 
