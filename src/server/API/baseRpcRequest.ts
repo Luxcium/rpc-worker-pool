@@ -6,6 +6,7 @@
  * @packageDocumentation
  */
 import type { RpcRequest } from '../../types/specs';
+import type { MCPRequest } from '../../types/specs/mcp-bridge';
 
 export type RpcArgs = Record<string, unknown> | [unknown, ...unknown[]];
 /**
@@ -43,7 +44,7 @@ export function rpcRequestMethodHandler<Q extends RpcArgs>(methodName: string) {
      */
     return function rpcRequestIdHandler(
       requestId: number | `${number}`
-    ): RpcRequest<P> {
+    ): RpcRequest<P> | MCPRequest<P> {
       return {
         jsonrpc: '2.0' as const,
         method: methodName,
@@ -56,7 +57,7 @@ export function rpcRequestMethodHandler<Q extends RpcArgs>(methodName: string) {
 
 export const createRpcRequest =
   <Q extends RpcArgs>(methodName: string) =>
-  <P extends RpcArgs = Q>(args: P, Id: numberStr): RpcRequest<P> =>
+  <P extends RpcArgs = Q>(args: P, Id: numberStr): RpcRequest<P> | MCPRequest<P> =>
     rpcRequestMethodHandler<Q>(methodName)<P>(args)(Id);
 
 export type numberStr = number | `${number}`;

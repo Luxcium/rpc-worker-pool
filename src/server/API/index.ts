@@ -28,3 +28,20 @@ export const {
   SERVER_ERROR,
   APPLICATION_ERROR,
 } = RPC_ERRORS_FNS;
+
+export {
+  createMCPRequest,
+  createMCPNotification,
+  createMCPResponse,
+  createMCPErrorResponse,
+} from '../../types/specs/mcp-bridge/factories';
+
+export {
+  MCPRequest,
+  MCPNotification,
+  MCPResponse,
+  isMCPMessage,
+  isMCPRequest,
+  isMCPNotification,
+  isMCPResponse,
+} from '../../types/specs/mcp-bridge/index';

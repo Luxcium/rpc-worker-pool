@@ -1,4 +1,3 @@
-// src/core/RpcWorkerPool-slim.ts
 import { cpus } from 'node:os';
 import { Worker } from 'node:worker_threads';
 import { baseRpcResponseRight } from '../server/API/RPC-serialise';
@@ -15,6 +14,7 @@ import type {
   WorkerPoolRpc,
 } from '../types';
 import { tsnodeWorkerGenerator } from './workerGenerator';
+import { MCPRequest, MCPResponse } from '../types/specs/mcp-bridge';
 
 abstract class Rpc {
   private _size: number;
@@ -116,7 +116,7 @@ interface WorkerManagement {
 
 interface RpcExecution {
   execRpc<ResultsType = unknown>(
-    rpcRequest: RpcRequest<string[]>
+    rpcRequest: RpcRequest<string[]> | MCPRequest<string[]>
   ): Promise<ResultsType>;
   exec<O = unknown>(
     command_name: string,
@@ -164,7 +164,7 @@ export class RpcWorkerPool
         __dirname,
         employee_number,
         Worker
-      ).on('message', (msg: RpcResponse<unknown, unknown>) => {
+      ).on('message', (msg: RpcResponse<unknown, unknown> | MCPResponse<unknown>) => {
         this.onMessageHandler(msg, employee_number);
       });
       const employee = {
@@ -192,7 +192,7 @@ export class RpcWorkerPool
     this.employeesSortedByLoad.splice(index, 0, employee);
   }
   public async execRpc<ResultsType = unknown>(
-    rpcRequest: RpcRequest<string[]>
+    rpcRequest: RpcRequest<string[]> | MCPRequest<string[]>
   ): Promise<ResultsType> {
     return this.exec<ResultsType>(
       rpcRequest.method,
@@ -212,7 +212,7 @@ export class RpcWorkerPool
       internal_job_ref,
       external_message_identifier
     );
-    const rpcRequest: RpcRequest<{}> = {
+    const rpcRequest: RpcRequest<{}> | MCPRequest<{}> = {
       jsonrpc: '2.0',
       id: Number(internal_job_ref),
       method: command_name,
@@ -235,7 +235,7 @@ export class RpcWorkerPool
       in_flight_commands: Map<number, any>;
       employee_number: number;
     },
-    rpcRequest: RpcRequest<{}>
+    rpcRequest: RpcRequest<{}> | MCPRequest<{}>
   ): Promise<void> {
     let retries = this.maxRetries;
     while (retries > 0) {
@@ -273,7 +273,7 @@ export class RpcWorkerPool
   }
 
   private onMessageHandler(
-    msg: RpcResponse<any>,
+    msg: RpcResponse<any> | MCPResponse<any>,
     employee_number: number
   ): void {
     const worker = this.employees[employee_number];

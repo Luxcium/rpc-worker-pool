@@ -9,8 +9,10 @@ import type {
   RpcRight,
 } from '../../types/specs';
 
+import type { MCPResponse } from '../../types/specs/mcp-bridge';
+
 export function baseRpcResponseRight<R>(result: R) {
-  return (responseId: number | string): RpcRight<R> => ({
+  return (responseId: number | string): RpcRight<R> | MCPResponse<R> => ({
     jsonrpc: '2.0' as const,
     id: responseId,
     result,

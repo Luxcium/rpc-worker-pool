@@ -5,12 +5,12 @@
  * @param params - The parameters of the method.
  * @returns The JSON-RPC request object as a string.
  */
+import { createMCPRequest, createMCPResponse } from '../../types/specs/mcp-bridge/factories';
+import { MCPRequest, MCPResponse } from '../../types/specs/mcp-bridge/index';
+
 export function createRPCRequest<T>(method: string, params: T): string {
-  return JSON.stringify({
-    jsonrpc: '2.0',
-    method,
-    params,
-  });
+  const request: MCPRequest<T> = createMCPRequest(method, params, Date.now());
+  return JSON.stringify(request);
 }
 
 /**
@@ -20,11 +20,11 @@ export function createRPCRequest<T>(method: string, params: T): string {
  * @returns The JSON-RPC response object as a string.
  */
 export function createRPCResponse<T>(result: Error | T): string {
-  const rpcResponse =
+  const response: MCPResponse<T> =
     result instanceof Error
-      ? { jsonrpc: '2.0', error: result.message }
-      : { jsonrpc: '2.0', result };
-  return JSON.stringify(rpcResponse);
+      ? createMCPResponse(Date.now(), { code: -1, message: result.message })
+      : createMCPResponse(Date.now(), result);
+  return JSON.stringify(response);
 }
 
 /**

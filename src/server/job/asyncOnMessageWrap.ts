@@ -6,18 +6,19 @@ import type { IdsObject } from '../../types';
 import type { RpcRequest, RpcResponse } from '../../types/specs';
 import { swapRpcId } from '../API';
 import { errorHandler } from './errorHandler';
+import { isMCPMessage, MCPRequest, MCPResponse } from '../../types/specs/mcp-bridge';
 
 export function asyncOnMessageWrap(fn: Fn) {
-  return async (msg: RpcRequest<[IdsObject, ...string[]]>) =>
+  return async (msg: RpcRequest<[IdsObject, ...string[]]> | MCPRequest<[IdsObject, ...string[]]>) =>
     messageWrap(fn, msg);
 }
 export type Fn = (
-  msg: RpcRequest<[IdsObject, ...string[]]>
-) => Promise<RpcResponse<unknown>>;
+  msg: RpcRequest<[IdsObject, ...string[]]> | MCPRequest<[IdsObject, ...string[]]>
+) => Promise<RpcResponse<unknown> | MCPResponse<unknown>>;
 
 export async function messageWrap(
   fn: Fn,
-  msg: RpcRequest<[IdsObject, ...string[]]>
+  msg: RpcRequest<[IdsObject, ...string[]]> | MCPRequest<[IdsObject, ...string[]]>
 ) {
   try {
     if (!parentPort) {
@@ -25,7 +26,7 @@ export async function messageWrap(
     }
     const [{ external_message_identifier }] = getParams(msg);
     const currentId = swapRpcId(external_message_identifier, msg);
-    const result: RpcResponse<unknown> = await fn(msg);
+    const result: RpcResponse<unknown> | MCPResponse<unknown> = await fn(msg);
     swapRpcId(currentId, result);
     parentPort.postMessage(result);
   } catch (error) {

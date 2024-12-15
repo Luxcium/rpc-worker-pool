@@ -10,6 +10,7 @@ import type { IdsObject } from '../types';
 import type { RpcRequest, RpcResponse } from '../types/specs';
 import { INTERNAL_ERROR } from './API';
 import { asyncOnMessageWrap, errorHandler } from './job/';
+import { MCPRequest, MCPResponse } from '../types/specs/mcp-bridge';
 
 const VERBOSE = true;
 const workerAsset = workerData.workerAsset;
@@ -29,8 +30,8 @@ void (function MAIN(): number {
 
       asyncOnMessageWrap(
         async (
-          rpcRequest: RpcRequest<[IdsObject, ...string[]]>
-        ): Promise<RpcResponse<unknown>> => {
+          rpcRequest: RpcRequest<[IdsObject, ...string[]]> | MCPRequest<[IdsObject, ...string[]]>
+        ): Promise<RpcResponse<unknown> | MCPResponse<unknown>> => {
           const { method } = rpcRequest;
           try {
             // ++ Is awaited here to catch any errors.

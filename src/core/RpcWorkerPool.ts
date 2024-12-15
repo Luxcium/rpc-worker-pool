@@ -1,5 +1,3 @@
-// src/core/RpcWorkerPool.ts
-
 import { cpus } from 'node:os';
 import { Worker } from 'node:worker_threads';
 import { baseRpcResponseRight } from '../server/API/RPC-serialise';
@@ -16,6 +14,7 @@ import type {
   WorkerPoolRpc,
 } from '../types';
 import { tsnodeWorkerGenerator } from './workerGenerator';
+import { MCPRequest, MCPResponse } from '../types/specs/mcp-bridge';
 
 // RpcWorkerPool class implements WorkerPool and WorkerPoolRpc
 export class RpcWorkerPool implements WorkerPool, WorkerPoolRpc {
@@ -95,7 +94,7 @@ export class RpcWorkerPool implements WorkerPool, WorkerPoolRpc {
         __dirname,
         employee_number,
         Worker
-      ).on('message', (msg: RpcResponse<unknown, unknown>) => {
+      ).on('message', (msg: RpcResponse<unknown, unknown> | MCPResponse<unknown>) => {
         // Attach message listener for each worker to handle responses
         this.onMessageHandler(msg, employee_number);
       });
@@ -135,7 +134,7 @@ export class RpcWorkerPool implements WorkerPool, WorkerPoolRpc {
 
   // Method to execute an RPC request, delegating to `exec` method
   async execRpc<ResultsType = unknown>(
-    rpcRequest: RpcRequest<string[]>
+    rpcRequest: RpcRequest<string[]> | MCPRequest<string[]>
   ): Promise<ResultsType> {
     // Call the general exec method with the parameters from rpcRequest
     return this.exec<ResultsType>(
@@ -165,7 +164,7 @@ export class RpcWorkerPool implements WorkerPool, WorkerPoolRpc {
     );
 
     // Construct the RPC request with details including job references and arguments
-    const rpcRequest: RpcRequest<{}> = {
+    const rpcRequest: RpcRequest<{}> | MCPRequest<{}> = {
       jsonrpc: '2.0',
       id: Number(internal_job_ref),
       method: command_name,
@@ -254,7 +253,7 @@ export class RpcWorkerPool implements WorkerPool, WorkerPoolRpc {
 
   // Private handler to process messages from workers
   private onMessageHandler(
-    msg: RpcResponse<any>,
+    msg: RpcResponse<any> | MCPResponse<any>,
     employee_number: number
   ): void {
     // Get the worker object and retrieve the command from in-flight commands
