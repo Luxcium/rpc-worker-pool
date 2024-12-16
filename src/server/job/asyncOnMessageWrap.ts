@@ -1,4 +1,10 @@
 'use strict';
+
+/**
+ * @module MessageWrapping
+ * @description Provides message wrapping functionality for RPC worker communication
+ */
+
 import { parentPort } from 'node:worker_threads';
 
 import { getParams } from '../../commands/tools/getParams';
@@ -9,7 +15,7 @@ import { errorHandler } from './errorHandler';
 /**
  * Wraps an asynchronous function to handle messages from the parent port.
  * @param {Fn} fn - The function to wrap.
- * @returns {Function} - The wrapped function.
+ * @returns {(msg: RpcRequest<[IdsObject, ...string[]]>) => Promise<void>} The wrapped function.
  */
 export function asyncOnMessageWrap(fn: Fn) {
   return async (msg: RpcRequest<[IdsObject, ...string[]]>) =>
@@ -18,9 +24,6 @@ export function asyncOnMessageWrap(fn: Fn) {
 
 /**
  * Type definition for the function to be wrapped.
- * @typedef {Function} Fn
- * @param {RpcRequest<[IdsObject, ...string[]]>} msg - The RPC request message.
- * @returns {Promise<RpcResponse<unknown>>} - The RPC response.
  */
 export type Fn = (
   msg: RpcRequest<[IdsObject, ...string[]]>
@@ -30,7 +33,8 @@ export type Fn = (
  * Handles the message wrapping logic, including error handling and ID swapping.
  * @param {Fn} fn - The function to wrap.
  * @param {RpcRequest<[IdsObject, ...string[]]>} msg - The RPC request message.
- * @returns {Promise<void>} - A promise that resolves when the message is handled.
+ * @returns {Promise<void>} A promise that resolves when the message is handled.
+ * @throws {Error} If parentPort is undefined
  */
 export async function messageWrap(
   fn: Fn,

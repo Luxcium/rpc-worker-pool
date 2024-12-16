@@ -3,6 +3,11 @@
 // #!! Primary worker definition.
 // #!! Consumed by the RpcWorkerPool class via path the to this file.
 
+/**
+ * @module WorkerThread
+ * @description Primary worker thread implementation for RPC communication
+ */
+
 import { parentPort, threadId, workerData } from 'node:worker_threads';
 
 import { methods } from '../commands';
@@ -22,7 +27,8 @@ VERBOSE && console.log(
 /**
  * Main function that initializes the worker and sets up message handling.
  * This function is immediately invoked to start the worker.
- * @returns {number} - Exit code (0 for success, 1 for error)
+ * @returns {number} Exit code (0 for success, 1 for error)
+ * @throws {Error} If parentPort is missing or undefined
  */
 void (function MAIN(): number {
   try {
@@ -31,12 +37,11 @@ void (function MAIN(): number {
     }
     parentPort.on(
       'message',
-
       asyncOnMessageWrap(
         /**
          * Handles incoming RPC requests and executes the corresponding method.
          * @param {RpcRequest<[IdsObject, ...string[]]>} rpcRequest - The RPC request containing method and parameters.
-         * @returns {Promise<RpcResponse<unknown>>} - The RPC response with the result or error.
+         * @returns {Promise<RpcResponse<unknown>>} The RPC response with the result or error.
          */
         async (
           rpcRequest: RpcRequest<[IdsObject, ...string[]]>
