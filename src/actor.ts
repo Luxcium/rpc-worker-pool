@@ -70,7 +70,7 @@ const strategies: Record<string, Strategies> = {
 const myStrategies: Strategies = strategies[strategy] || STRATEGY;
 
 // ## WILL CREATE WORKER POOL INSTANCE
-const workerPool = new RpcWorkerPool(threads, myStrategies, VERBOSE);
+const workerPool = RpcWorkerPool.create(threads, myStrategies, VERBOSE);
 
 // ## WILL TRY TO CONNECT
 console.log('Will try to connect', `${actorEndpoint}:${actorPort}`);

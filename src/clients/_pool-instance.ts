@@ -13,9 +13,9 @@ const { VERBOSE } = global;
 
 const strategy = isStrategy('leastbusy') ? 'leastbusy' : strategies.leastbusy;
 
-void (async function MAIN({ threads }: { threads: number }): Promise<never> {
+void (async function MAIN({ threads }: { threads: number; }): Promise<never> {
   console.log(`at: MAIN from ${__filename}`);
-  const workerPool = new RpcWorkerPool(threads, strategy, VERBOSE);
+  const workerPool = RpcWorkerPool.create(threads, strategy, VERBOSE);
   await delay();
   const from = 10;
   const to = 20;

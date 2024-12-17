@@ -45,8 +45,18 @@ export class RpcWorkerPool implements WorkerPool, WorkerPoolRpc {
     in_flight_commands: Map<number, any>;
     employee_number: number;
   }[];
-
-  constructor(
+  /**
+   * Creates a new instance of the `RpcWorkerPool` class.
+   *
+   * @param size - The number of workers to create in the pool. Defaults to 0.
+   * @param strategy - The strategy to use for assigning tasks to workers. Defaults to `strategies.leastbusy`.
+   * @param verbosity - A flag indicating whether to enable verbose logging. Defaults to `false`.
+   * @returns A new instance of the `RpcWorkerPool` class.
+   */
+  public static create(size = 0, strategy: Strategies = strategies.leastbusy, verbosity = false) {
+    return new RpcWorkerPool(size, strategy, verbosity);
+  }
+  protected constructor(
     size = 0,
     strategy: Strategies = strategies.leastbusy,
     verbosity = false

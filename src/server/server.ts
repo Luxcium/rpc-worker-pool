@@ -5,15 +5,10 @@ import { createServer as createHTTP_Server } from 'node:http';
 
 import chalk from 'chalk';
 
-import { getDefaultConfigs } from './configs/getDefaultConfigs';
-import { getEnvConfigs } from './configs/getEnvConfigs';
-import { priorities } from './configs/priorities';
+import { getDefaultConfigs, getEnvConfigs, priorities } from './configs';
 import RpcWorkerPool from './RpcWorkerPool';
+import { getRelativePaths, getTcpServer, response, serverResponse } from './utils';
 import { error400, error500, error503 } from './utils/errorHttp';
-import { getRelativePaths } from './utils/getRelativePaths';
-import { getTcpServer } from './utils/getTcpServer';
-import { response } from './utils/response';
-import { serverResponse } from './utils/serverResponse';
 
 const VERBOSE = false;
 const defaultConf = getDefaultConfigs();
@@ -31,10 +26,14 @@ const {
 
 // #region ++ CREATE POOL INSTANCES ---------------------------------↓
 // ## WILL CREATE WORKER POOL INSTANCE ―――――――――――――――――――――――――――――――
-const workerPool = new RpcWorkerPool(threads, strategy, VERBOSE);
+function createWorkerPool(poolFactory: () => RpcWorkerPool) {
+  return poolFactory();
+}
+
+const workerPool = createWorkerPool(() => RpcWorkerPool.create(threads, strategy, VERBOSE));
 const elementCounter = { messageSeq: 0, actorTracking: 0 };
 const messageMap = new Map<number, ServerResponse>();
-type Data = { messageSeq: number; command_name: string; args: string[] };
+type Data = { messageSeq: number; command_name: string; args: string[]; };
 export const actorSet = new Set<(data: Data) => any>();
 const primeActor = async (data: Data) => {
   try {
@@ -85,8 +84,9 @@ const primeActor = async (data: Data) => {
 
     // End the http reponse with the message
     response(data, httpReply, messageMap);
+    messageMap.delete(data.messageSeq);
   } catch (error) {
-    console.error(error);
+    console.error(`Error in primeActor: ${(error as Error).message}`);
   }
 };
 actorSet.add(primeActor);
@@ -129,7 +129,7 @@ export function getHttpServer() {
       // Extract the command name, query string, and fragment identifier from the URL
       const fullUrl = new URL(
         req?.url ?? '',
-        `http:${`//${req.headers.host}`}`
+        `http:\/\/${req.headers.host}`
       );
 
       // Split the path into segments and filter out empty strings
@@ -218,8 +218,8 @@ export function getHttpServer() {
         );
       }
     } catch (error) {
-      console.error(error);
-      return error500(res, (error as any).message);
+      console.error(`Error in HTTP Server: ${(error as Error).message}`);
+      return error500(res, (error as Error).message);
     }
   });
   return HTTP_Server;

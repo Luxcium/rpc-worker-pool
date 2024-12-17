@@ -23,6 +23,28 @@ const CORES = cpus().length;
  * This class is intended to be used by the main thread of an application.
  * It creates a pool of worker threads that can execute remote procedure calls (RPCs) on behalf of the main thread.
  */
+/**
+ * A worker pool implementation that manages multiple worker threads and handles RPC (Remote Procedure Call) communications.
+ *
+ * This class creates and maintains a pool of worker threads, distributes tasks among them using different scheduling strategies,
+ * and handles the communication between the main thread and worker threads using RPC messages.
+ *
+ * @remarks
+ * The pool supports three scheduling strategies:
+ * - `leastbusy`: Assigns tasks to the worker with the least number of in-flight commands
+ * - `roundrobin`: Distributes tasks evenly among workers in a circular order
+ * - `random`: Randomly selects a worker for each task
+ *
+ * @example
+ * ```typescript
+ * const pool = RpcWorkerPool.create(4, 'leastbusy', true);
+ * const result = await pool.exec('someCommand', 1, 'arg1', 'arg2');
+ * ```
+ *
+ * @public
+ * @implements {WorkerPool}
+ * @implements {WorkerPoolRpc}
+ */
 export class RpcWorkerPool implements WorkerPool, WorkerPoolRpc {
   /**
    * The number of worker threads in the pool. Defaults to the number of CPU cores.
@@ -79,15 +101,32 @@ export class RpcWorkerPool implements WorkerPool, WorkerPoolRpc {
   // The number of worker threads to spawn.
   // The strategy for handling incoming requests.
   // Whether or not to enable verbose output.
+
   /**
-   * Creates a new RpcWorkerPool object.
-   * @param pathURI - The file path of the worker thread code.
-   * @param size - The number of worker threads to create. Defaults to the number of CPU cores.
-   * @param strategy - The strategy used to allocate tasks to worker threads. Defaults to 'leastbusy'.
-   * @param verbosity - A boolean indicating whether logging is enabled. Defaults to false.
-   * When logging is enabled, the pool will log messages to the console.
+   * Creates a new instance of {@link RpcWorkerPool}.
+   *
+   * @param size - The initial size of the worker pool. Defaults to 0.
+   * @param strategy - The scheduling strategy to use for distributing work. Defaults to least busy strategy.
+   * @param verbosity - Whether to enable verbose logging. Defaults to false.
+   *
+   * @returns A new {@link RpcWorkerPool} instance.
+   *
+   * @public
+   * @static
    */
-  constructor(
+  public static create(size = 0, strategy: Strategies = strategies.leastbusy, verbosity = false) {
+    return new RpcWorkerPool(null, size, strategy, verbosity);
+  }
+
+  /**
+ * Creates a new RpcWorkerPool object.
+ * @param pathURI - The file path of the worker thread code.
+ * @param size - The number of worker threads to create. Defaults to the number of CPU cores.
+ * @param strategy - The strategy used to allocate tasks to worker threads. Defaults to 'leastbusy'.
+ * @param verbosity - A boolean indicating whether logging is enabled. Defaults to false.
+ * When logging is enabled, the pool will log messages to the console.
+ */
+  protected constructor(
     pathURI: null,
     size = 0,
     strategy: Strategies = strategies.leastbusy,
@@ -99,8 +138,7 @@ export class RpcWorkerPool implements WorkerPool, WorkerPoolRpc {
       : strategies.leastbusy;
     this._verbose = verbosity;
     const SCRIPT_FILE_URI = join(
-      `${__dirname}/worker.${
-        existsSync(`${__dirname}/worker.ts`) ? 'ts' : 'js'
+      `${__dirname}/worker.${existsSync(`${__dirname}/worker.ts`) ? 'ts' : 'js'
       }`
     );
     void pathURI;

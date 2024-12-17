@@ -1,3 +1,4 @@
+// src/server/configs/index.ts
 export { getArgvConfigs } from './getArgvConfigs';
 export { getConfigs } from './getConfigs';
 export { getDefaultConfigs } from './getDefaultConfigs';
