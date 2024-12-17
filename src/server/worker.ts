@@ -11,13 +11,12 @@
 import { parentPort, threadId, workerData } from 'node:worker_threads';
 
 import { methods } from '../commands';
-import type { IdsObject } from '../types';
-import type { RpcRequest, RpcResponse } from '../types/specs';
+import type { IdsObject, RpcRequest, RpcResponse } from '../types';
 import { INTERNAL_ERROR } from './API';
 import { asyncOnMessageWrap, errorHandler } from './job/';
 
 const VERBOSE = true;
-const workerAsset = workerData.workerAsset;
+const { workerAsset } = workerData;
 
 VERBOSE && console.log(
   `WORKER(${threadId - 1}):${1 === threadId - workerAsset ? '' : ` EmployeeID: '${workerAsset}'`
@@ -46,11 +45,11 @@ void (function MAIN(): number {
         async (
           rpcRequest: RpcRequest<[IdsObject, ...string[]]>
         ): Promise<RpcResponse<unknown>> => {
-          const { method } = rpcRequest;
           try {
+            const { method } = rpcRequest;
+
             // ++ Is awaited here to catch any errors.
-            const resultRPC = await methods[method](rpcRequest);
-            return resultRPC;
+            return await methods[method](rpcRequest);
           } catch (error) {
             const errorRPC = INTERNAL_ERROR(rpcRequest.id, error);
             console.error(errorRPC);

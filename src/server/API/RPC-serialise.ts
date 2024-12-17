@@ -1,5 +1,5 @@
 // src/server/API/RPC-serialise.ts
-import type { InspectOptions } from 'util';
+import type { InspectOptions } from 'node:util';
 
 import type {
   RpcLeft,

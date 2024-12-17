@@ -1,13 +1,13 @@
 'use strict';
+// src/server/job/asyncOnMessageWrap.ts
 
 /**
  * @module MessageWrapping
  * @description Provides message wrapping functionality for RPC worker communication
  */
-
 import { parentPort } from 'node:worker_threads';
 
-import { getParams } from '../../commands/tools/getParams';
+import { getParams } from '../../commands/tools';
 import type { IdsObject, RpcRequest, RpcResponse } from '../../types';
 import { swapRpcId } from '../API';
 import { errorHandler } from './errorHandler';
