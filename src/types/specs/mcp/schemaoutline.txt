@@ -1,0 +1,88 @@
+export const LATEST_PROTOCOL_VERSION = "2024-11-05";
+export const JSONRPC_VERSION = "2.0";
+export const PARSE_ERROR = -32700;
+export const INVALID_REQUEST = -32600;
+export const METHOD_NOT_FOUND = -32601;
+export const INVALID_PARAMS = -32602;
+export const INTERNAL_ERROR = -32603;
+
+export interface Request
+export interface Notification
+export interface Result
+export interface JSONRPCRequest extends Request
+export interface JSONRPCNotification extends Notification
+export interface JSONRPCResponse
+export interface JSONRPCError
+export interface CancelledNotification extends Notification
+export interface InitializeRequest extends Request
+export interface InitializeResult extends Result
+export interface InitializedNotification extends Notification
+export interface ClientCapabilities
+export interface ServerCapabilities
+export interface Implementation
+export interface PingRequest extends Request
+export interface ProgressNotification extends Notification
+export interface PaginatedRequest extends Request
+export interface PaginatedResult extends Result
+export interface ListResourcesRequest extends PaginatedRequest
+export interface ListResourcesResult extends PaginatedResult
+export interface ListResourceTemplatesRequest extends PaginatedRequest
+export interface ListResourceTemplatesResult extends PaginatedResult
+export interface ReadResourceRequest extends Request
+export interface ReadResourceResult extends Result
+export interface ResourceListChangedNotification extends Notification
+export interface SubscribeRequest extends Request
+export interface UnsubscribeRequest extends Request
+export interface ResourceUpdatedNotification extends Notification
+export interface Resource extends Annotated
+export interface ResourceTemplate extends Annotated
+export interface ResourceContents
+export interface TextResourceContents extends ResourceContents
+export interface BlobResourceContents extends ResourceContents
+export interface ListPromptsRequest extends PaginatedRequest
+export interface ListPromptsResult extends PaginatedResult
+export interface GetPromptRequest extends Request
+export interface GetPromptResult extends Result
+export interface Prompt
+export interface PromptArgument
+export interface PromptMessage
+export interface EmbeddedResource extends Annotated
+export interface PromptListChangedNotification extends Notification
+export interface ListToolsRequest extends PaginatedRequest
+export interface ListToolsResult extends PaginatedResult
+export interface CallToolResult extends Result
+export interface CallToolRequest extends Request
+export interface ToolListChangedNotification extends Notification
+export interface Tool
+export interface SetLevelRequest extends Request
+export interface LoggingMessageNotification extends Notification
+export interface CreateMessageRequest extends Request
+export interface CreateMessageResult extends Result, SamplingMessage
+export interface SamplingMessage
+export interface Annotated
+export interface TextContent extends Annotated
+export interface ImageContent extends Annotated
+export interface ModelPreferences
+export interface ModelHint
+export interface CompleteRequest extends Request
+export interface CompleteResult extends Result
+export interface ResourceReference
+export interface PromptReference
+export interface ListRootsRequest extends Request
+export interface ListRootsResult extends Result
+export interface Root
+export interface RootsListChangedNotification extends Notification
+
+export type JSONRPCMessage
+export type ProgressToken
+export type Cursor
+export type RequestId
+export type EmptyResult
+export type Role
+export type LoggingLevel
+export type ClientRequest
+export type ClientNotification
+export type ClientResult
+export type ServerRequest
+export type ServerNotification
+export type ServerResult
