@@ -10,7 +10,7 @@
     "prettier": "prettier --write .",
     "lint": " eslint ./src",
     "lint:fix": "eslint ./src -v --fix",
-    "install": "pwd; yarn build || exit 13; pwd",
+    "install": "# Skip for the time being: pwd; yarn build || exit 13; pwd",
     "deploy:local": "cp package.json ./docker/package.json; npm run build && npm run docker:build",
     "docker:build": "docker build --progress plain --label 'image:rpc-worker-pool' --tag rpc-worker-pool:latest ./docker",
     "docker:live:server": "zsh scripts/docker-run.server.sh || exit 55",
