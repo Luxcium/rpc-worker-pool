@@ -2,62 +2,174 @@
 
 ## Overview
 
-The RPC Worker Pool is a robust, multi-threaded Remote Procedure Call (RPC) server implemented in Node.js and TypeScript. It is designed to handle a high volume of tasks concurrently, leveraging the power of multi-core processors to improve performance for CPU-intensive or I/O-bound tasks. The project uses the JSON-RPC 2.0 protocol for communication between the main thread and worker threads, allowing for lightweight and easy-to-use remote procedure calls.
+The RPC Worker Pool is a robust, multi-threaded Remote Procedure Call (RPC) system implemented in Node.js and TypeScript. It leverages the Actor Model pattern for task queue management and is designed to handle high-volume concurrent tasks efficiently. The system utilizes Node.js worker threads to take full advantage of multi-core processors, making it ideal for CPU-intensive or I/O-bound operations.
+
+## Architecture
+
+```mermaid
+graph TB
+    Client[Client] --> RPC[RPC Interface]
+    RPC --> Pool[Worker Pool]
+    Pool --> W1[Worker 1]
+    Pool --> W2[Worker 2]
+    Pool --> W3[Worker 3]
+
+    subgraph Pipeline
+    W1 --> PS1[Pipeline Stage 1]
+    PS1 --> PS2[Pipeline Stage 2]
+    PS2 --> PS3[Pipeline Stage 3]
+    end
+
+    subgraph Components
+    C1[Command System]
+    C2[Error Handling]
+    C3[Configuration]
+    end
+
+    W1 --> Components
+    W2 --> Components
+    W3 --> Components
+```
 
 ## Key Components
 
-### RpcWorkerPool
+### Core System
 
-The RpcWorkerPool class, defined in `RpcWorkerPool.ts`, manages a pool of worker threads. It provides methods to add tasks to the pool, execute them, and terminate the pool. This class is the core of the project, coordinating the execution of tasks and the management of worker threads.
+1. **RPC Worker Pool (`/core`)**
+   - `RpcWorkerPool.ts`: Main pool management system
+   - `RpcWorkerPool-slim.ts`: Lightweight version for reduced resource usage
+   - `workerGenerator.ts`: Worker thread creation and management
 
-### Worker
+2. **Server Implementation (`/server`)**
+   - Modular pipeline architecture
+   - Configuration management system
+   - Robust API layer with error handling
+   - Job queue management
+   - TCP server implementation
 
-The Worker class, defined in `worker.ts`, is responsible for executing tasks in separate threads. Each worker runs on a separate CPU core, allowing the project to take full advantage of multi-core processors.
+3. **Pipeline System (`/Pipe`)**
+   - Multi-stage data processing pipeline
+   - Composable processing steps
+   - Process wrapping/unwrapping capabilities
+   - Custom stage implementation support
 
-### JSON-RPC 2.0 Specification
+4. **Command System (`/commands`)**
+   - Extensible command framework
+   - Command creation tools
+   - RPC connector factory
+   - Utility methods for command handling
 
-The project uses the JSON-RPC 2.0 protocol for communication between the main thread and worker threads. TypeScript type definitions for the JSON-RPC 2.0 specification are provided in the `json-rpc-2.0` spec folder.
+### Communication Protocol
 
-### RPC-serialise
+The project implements the JSON-RPC 2.0 protocol for communication between:
 
-The `RPC-serialise.ts` file provides functions for serializing and deserializing JSON-RPC messages. This is a crucial part of the system, enabling the conversion of complex data structures into a format that can be easily transmitted over a network or between threads.
+- Main thread and worker threads
+- External clients and the RPC server
+- Internal system components
 
-### RPC-errors
+### Type System
 
-The `RPC-errors.ts` file defines classes for JSON-RPC errors. Each class corresponds to a specific error code in the JSON-RPC 2.0 specification. This robust error handling mechanism is essential for building reliable and resilient systems.
+Comprehensive TypeScript type definitions are provided in the `/types` directory:
 
-### Commands
+- JSON-RPC 2.0 specification types
+- Worker pool operation types
+- Command and message types
+- Pipeline stage types
+- MCP (Model Context Protocol) schema integration
 
-The `commands.ts` file exports a map of command names to their corresponding functions. This design allows a worker to execute a task by simply providing the name of the command.
+## Configuration
+
+The system can be configured through:
+
+- Environment variables
+- Command line arguments
+- Configuration files
+- Docker environment settings
+
+## Project Dependencies
+
+### Core Dependencies
+
+```json
+{
+  "chalk": "4.1.2",
+  "@luxcium/bigintstring": "workspace:*",
+  "@luxcium/tools": "workspace:*",
+  "@luxcium/redis-services": "workspace:*",
+  "mapping-tools": "workspace:*",
+  "@luxcium/phash-compute": "workspace:*"
+}
+```
 
 ## Getting Started
 
-To get started with the RPC Worker Pool, clone the repository and install the dependencies:
+### Prerequisites
+
+- Node.js v22 or later
+- pnpm package manager
+- Docker (optional, for containerized deployment)
+
+### Installation
+
+1. Clone the repository:
+
+  ```bash
+  git clone <repository-url>
+  cd rpc-worker-pool
+  ```
+
+2. Install dependencies:
+
+  ```bash
+  pnpm install
+  ```
+
+3. Build the project:
+
+  ```bash
+  pnpm run build
+  ```
+
+### Docker Deployment
+
+Build the Docker image:
 
 ```bash
-git clone https://github.com/Luxcium/rpc-worker-pool.git
-cd rpc-worker-pool
-npm install
+pnpm run docker:build
 ```
 
-Then, you can run the project:
+Run the server:
 
 ```bash
-npm start
+pnpm run docker:live:server
 ```
 
-## Dependencies
+Run the actor:
 
-The project is written in TypeScript and uses several libraries, including:
+```bash
+pnpm run docker:live:actor
+```
 
-- "chalk" for terminal string styling
-- "node-fetch" for making HTTP requests
-- "ws" for WebSocket communication
+Stop the services:
+
+```bash
+pnpm run stop:docker:live
+```
+
+## Development
+
+### Available Scripts
+
+- `pnpm run build`: Build the project
+- `pnpm run debug`: Run in debug mode with inspector
+- `pnpm run lint`: Run ESLint checks
+- `pnpm run lint:fix`: Fix ESLint issues
+- `pnpm run prettier`: Format code with Prettier
 
 ## Contributing
 
-Contributions to the RPC Worker Pool are welcome. Please submit a pull request or open an issue to discuss your proposed changes.
+Please read [CONTRIBUTING.md](./CONTRIBUTING.md) for details on our code of conduct and the process for submitting pull requests.
 
 ## License
 
-The RPC Worker Pool is licensed under the MIT License.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
