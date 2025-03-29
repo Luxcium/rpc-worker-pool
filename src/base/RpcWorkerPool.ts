@@ -1,24 +1,24 @@
 'use strict';
-// src/server/RpcWorkerPool.ts
+// src/base/RpcWorkerPool.ts
 import { existsSync } from 'node:fs';
 import { cpus } from 'node:os';
 import { join } from 'node:path';
 import { Worker } from 'node:worker_threads';
 
+import { baseRpcResponseRight } from 'src/server/API';
+import {
+  maxSize,
+  Strategies,
+  strategies,
+  supportedStrategies,
+} from 'src/server/utils';
 import type {
   RpcRequest,
   RpcResponse,
   RpcResponseError,
   WorkerPool,
   WorkerPoolRpc,
-} from '../types';
-import { baseRpcResponseRight } from './API/RPC-serialise';
-import {
-  maxSize,
-  type Strategies,
-  strategies,
-  supportedStrategies,
-} from './utils';
+} from 'src/types';
 
 export class RpcWorkerPool implements WorkerPool, WorkerPoolRpc {
   private readonly size: number;
@@ -53,7 +53,11 @@ export class RpcWorkerPool implements WorkerPool, WorkerPoolRpc {
    * @param verbosity - A flag indicating whether to enable verbose logging. Defaults to `false`.
    * @returns A new instance of the `RpcWorkerPool` class.
    */
-  public static create(size = 0, strategy: Strategies = strategies.leastbusy, verbosity = false) {
+  public static create(
+    size = 0,
+    strategy: Strategies = strategies.leastbusy,
+    verbosity = false
+  ) {
     return new RpcWorkerPool(size, strategy, verbosity);
   }
   protected constructor(
