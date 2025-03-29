@@ -1,13 +1,22 @@
 // src/command/CommandDispatcher.ts
-//!! PEOBLEMTIC TRENSIENT atempt to save the code or delete the file
 import { RpcRequest, RpcResponse } from 'src/types';
+import type { RpcRight } from 'src/types/specs/json-rpc-2.0/response-object';
 
-// The interface that all command handlers must implement
-export interface CommandHandler<RequestType, ResponseType> {
+/**
+ * Interface that all command handlers must implement.
+ * @param RequestType - The type of request this handler accepts, must be an object or array
+ * @param ResponseType - The type of response this handler returns
+ */
+export interface CommandHandler<
+  RequestType extends Record<string, unknown> | unknown[],
+  ResponseType,
+> {
   handle(request: RequestType): Promise<ResponseType>;
 }
 
-// CommandDispatcher: Dispatcher to manage command routing and execution
+/**
+ * Dispatcher to manage command routing and execution
+ */
 export class CommandDispatcher {
   private handlers: Map<string, CommandHandler<any, any>> = new Map();
 
@@ -17,16 +26,23 @@ export class CommandDispatcher {
     this.registerHandler('helloWorld', new HelloWorldHandler());
   }
 
-  // Register command handler for a specific command
-  private registerHandler(command: string, handler: CommandHandler<any, any>) {
+  /**
+   * Register command handler for a specific command
+   */
+  private registerHandler<
+    RequestType extends Record<string, unknown> | unknown[],
+    ResponseType,
+  >(command: string, handler: CommandHandler<RequestType, ResponseType>) {
     this.handlers.set(command, handler);
   }
 
-  // Dispatch a command to the appropriate handler
-  public async dispatch<RequestType, ResponseType>(
-    method: string,
-    request: RequestType
-  ): Promise<ResponseType> {
+  /**
+   * Dispatch a command to the appropriate handler
+   */
+  public async dispatch<
+    RequestType extends Record<string, unknown> | unknown[],
+    ResponseType,
+  >(method: string, request: RequestType): Promise<ResponseType> {
     const handler = this.handlers.get(method);
 
     if (!handler) {
@@ -37,8 +53,13 @@ export class CommandDispatcher {
   }
 }
 
-// Utility function that creates a typed request-response tuple
-export function createCommandTuple<RequestType, ResponseType>(
+/**
+ * Creates a typed request-response tuple for RPC communication
+ */
+export function createCommandTuple<
+  RequestType extends Record<string, unknown> | unknown[],
+  ResponseType,
+>(
   method: string,
   params: RequestType
 ): [RpcRequest<RequestType>, RpcResponse<ResponseType>] {
@@ -50,29 +71,37 @@ export function createCommandTuple<RequestType, ResponseType>(
     params,
   };
 
-  // Create the response part of the tuple (initially null)
+  // Create a successful RPC response
   const response: RpcResponse<ResponseType> = {
     jsonrpc: '2.0',
-    result: null,
-    error: null,
+    result: {} as ResponseType,
     id: request.id,
-  };
+  } satisfies RpcRight<ResponseType>;
 
   return [request, response];
 }
 
-// // Example Command Handlers
-// class HeavyTaskHandler implements CommandHandler<any, string> {
-//   async handle(request: any): Promise<string> {
-//     // Simulate a heavy task (e.g., computation or database call)
-//     return new Promise(resolve => {
-//       setTimeout(() => resolve('Heavy task completed successfully'), 2000);
-//     });
-//   }
-// }
+/**
+ * Example Command Handler that simulates a heavy task
+ */
+class HeavyTaskHandler
+  implements CommandHandler<Record<string, unknown>, string>
+{
+  async handle(_request: Record<string, unknown>): Promise<string> {
+    // Simulate a heavy task (e.g., computation or database call)
+    return new Promise(resolve => {
+      setTimeout(() => resolve('Heavy task completed successfully'), 2000);
+    });
+  }
+}
 
-// class HelloWorldHandler implements CommandHandler<any, string> {
-//   async handle(request: any): Promise<string> {
-//     return 'Hello, world!';
-//   }
-// }
+/**
+ * Example Command Handler that returns a simple greeting
+ */
+class HelloWorldHandler
+  implements CommandHandler<Record<string, unknown>, string>
+{
+  async handle(_request: Record<string, unknown>): Promise<string> {
+    return 'Hello, world!';
+  }
+}
