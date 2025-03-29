@@ -4,13 +4,13 @@
   // at: /projects/monorepo-one/services/rpc-worker-pool/tsconfig.json
   "compilerOptions": {
     /* Emit Options */
-    "target": "ESNext",
-    "module": "CommonJS",
-    "moduleResolution": "node",
+    "target": "ES2020",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
     "rootDir": "./src",
-    "outDir": "./build/lib",
-    "declarationDir": "./build/typings",
-    "tsBuildInfoFile": "./build/ts-out-info.lib",
+    "outDir": "dist",
+    "declarationDir": "dist/typings",
+    "tsBuildInfoFile": "./dist/ts-out-info.lib",
     "declaration": true,
     "declarationMap": true,
     "inlineSources": true,
@@ -39,21 +39,21 @@
       "node",
       "global"
     ],
-    "baseUrl": "./",
+    "baseUrl": ".",
     "paths": {
-      "*": [
-        "*",
+      "src/*": [
         "src/*"
       ]
-    }
+    },
+    "esModuleInterop": true,
+    "strict": true
   },
   "include": [
-    "./src/**/*.*",
-    "global/global.d.ts"
+    "src/**/*",
+    "global/**/*"
   ],
   "exclude": [
-    "lib",
-    "**/jest.*.js",
-    "private/archive/**"
+    "node_modules",
+    "dist"
   ]
 }

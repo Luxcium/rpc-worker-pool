@@ -5,7 +5,6 @@ import { cpus } from 'node:os';
 import { join } from 'node:path';
 import { Worker } from 'node:worker_threads';
 
-import { baseRpcResponseRight } from 'src/server/API';
 import {
   maxSize,
   Strategies,
@@ -19,6 +18,7 @@ import type {
   WorkerPool,
   WorkerPoolRpc,
 } from 'src/types';
+import { baseRpcResponseRight } from '../server/API';
 
 export class RpcWorkerPool implements WorkerPool, WorkerPoolRpc {
   private readonly size: number;
