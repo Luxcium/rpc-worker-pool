@@ -4,10 +4,13 @@ import { normalize } from 'node:path/posix';
 import type { Data } from './types';
 
 // -------------------- Strategy-related utilities --------------------
+/**
+ * Strategy constants for worker selection
+ */
 export const strategies = {
   roundrobin: 'roundrobin' as const,
-  leastbusy: 'leastbusy' as const,
   random: 'random' as const,
+  leastbusy: 'leastbusy' as const,
 };
 
 export type Strategies = (typeof strategies)[keyof typeof strategies];
@@ -18,18 +21,32 @@ export const supportedStrategies = new Set<Strategies>([
   strategies.random,
 ]);
 
-export function isStrategy(value: string): value is Strategies {
+/**
+ * Checks if a string is a valid strategy
+ * @param value - The string to check
+ * @returns Whether the string is a valid strategy
+ */
+export function isStrategy(value: string | undefined): value is Strategies {
+  if (!value) return false;
   return supportedStrategies.has(value as Strategies);
 }
 
+/**
+ * Calculates the maximum size of a worker pool
+ * @param size - The requested size
+ * @param cores - The number of available CPU cores
+ * @returns The calculated pool size
+ */
 export function maxSize(size: number, cores: number): number {
   if (size < 1) {
-    return Math.max(1, cores + size);
+    // If size is less than 1, use the number of cores minus the absolute value of size
+    // e.g., if size is -1 and cores is 8, return 7
+    const calculatedSize = Math.max(cores + size, 1);
+    return calculatedSize;
   }
-  if (size === 0) {
-    return Math.max(1, cores - 1);
-  }
-  return Math.max(1, size);
+
+  // Otherwise use the specified size, with a minimum of 1
+  return Math.max(size, 1);
 }
 
 // -------------------- Path utilities --------------------

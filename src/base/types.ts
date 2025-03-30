@@ -56,3 +56,65 @@ export interface Data {
   command_name: string;
   args: string[];
 }
+
+/**
+ * Base types for RPC worker pool implementation
+ */
+
+/**
+ * JSON-RPC 2.0 request object
+ */
+export interface RpcRequest<T = unknown> {
+  jsonrpc: '2.0';
+  id: number | string;
+  method: string;
+  params?: T;
+}
+
+/**
+ * JSON-RPC 2.0 error object
+ */
+export interface RpcResponseError<T = unknown> {
+  code: number;
+  message: string;
+  data?: T;
+}
+
+/**
+ * JSON-RPC 2.0 response object
+ */
+export interface RpcResponse<T = unknown, E = unknown> {
+  jsonrpc: '2.0';
+  id: number | string;
+  result?: T;
+  error?: RpcResponseError<E>;
+}
+
+/**
+ * Object containing IDs for tracking messages
+ */
+export interface IdsObject {
+  external_message_identifier: number | string;
+  employee_number: number;
+  internal_job_ref: number;
+}
+
+/**
+ * Interface for worker pool implementations
+ */
+export interface WorkerPool {
+  exec<O = unknown>(
+    command_name: string,
+    external_message_identifier: number,
+    ...args: string[]
+  ): Promise<O>;
+}
+
+/**
+ * Interface for RPC worker pool implementations
+ */
+export interface WorkerPoolRpc {
+  execRpc<ResultsType = unknown>(
+    rpcRequest: RpcRequest<string[]>
+  ): Promise<ResultsType>;
+}

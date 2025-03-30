@@ -1,94 +1,60 @@
 'use strict';
 // src/base/RpcWorkerPool.ts
-import { existsSync } from 'node:fs';
 import { cpus } from 'node:os';
 import { join } from 'node:path';
 import { Worker } from 'node:worker_threads';
 
-import {
-  maxSize,
-  Strategies,
-  strategies,
-  supportedStrategies,
-} from 'src/server/utils';
+import { baseRpcResponseRight } from './API';
 import type {
   RpcRequest,
   RpcResponse,
   RpcResponseError,
   WorkerPool,
   WorkerPoolRpc,
-} from 'src/types';
-import { baseRpcResponseRight } from '../server/API';
+} from './types';
+import { maxSize, Strategies, strategies, supportedStrategies } from './utils';
 
 export class RpcWorkerPool implements WorkerPool, WorkerPoolRpc {
   private readonly size: number;
-
   private readonly strategy: Strategies;
-
   private _verbose: boolean;
-
   private rr_index: number;
-
   private next_job_ref: number;
-
-  /**
-   * Represents the workers in the RPC worker pool.
-   *
-   * @remarks
-   * This property stores an array of objects, each representing a worker in the RPC worker pool.
-   * Each worker object contains a reference to the actual worker instance.
-   *
-   * @private @readonly
-   */
   private readonly employees: {
     worker: Worker;
     in_flight_commands: Map<number, any>;
     employee_number: number;
   }[];
-  /**
-   * Creates a new instance of the `RpcWorkerPool` class.
-   *
-   * @param size - The number of workers to create in the pool. Defaults to 0.
-   * @param strategy - The strategy to use for assigning tasks to workers. Defaults to `strategies.leastbusy`.
-   * @param verbosity - A flag indicating whether to enable verbose logging. Defaults to `false`.
-   * @returns A new instance of the `RpcWorkerPool` class.
-   */
+
   public static create(
     size = 0,
     strategy: Strategies = strategies.leastbusy,
     verbosity = false
-  ) {
+  ): RpcWorkerPool {
     return new RpcWorkerPool(size, strategy, verbosity);
   }
+
   protected constructor(
     size = 0,
     strategy: Strategies = strategies.leastbusy,
     verbosity = false
   ) {
     const CORES = cpus().length;
-
-    // Compute the value of the size of the worker pool.
-    // If the size is less than 1, use the number of CPU cores minus the size.
-    // If the size is 0, use the number of CPU cores minus 1.
-    // Otherwise, use the size provided.
-    // The size of the worker pool must be at least 1.
     this.size = maxSize(size, CORES);
-
     this.strategy = supportedStrategies.has(strategy)
       ? strategy
       : strategies.leastbusy;
-
     this.rr_index = -1;
     this.next_job_ref = 0;
     this.employees = [];
+    this._verbose = verbosity;
 
-    // Creates a worker for each employee in the worker pool.
     for (
       let employee_number = 0;
       employee_number < this.size;
       employee_number++
     ) {
-      const worker = tsnodeWorkerGenerator(
+      const worker = this.tsnodeWorkerGenerator(
         __dirname,
         employee_number,
         Worker
@@ -102,10 +68,6 @@ export class RpcWorkerPool implements WorkerPool, WorkerPoolRpc {
         employee_number,
       });
     }
-
-    this._verbose = verbosity;
-
-    return this;
   }
 
   async execRpc<ResultsType = unknown>(
@@ -124,8 +86,6 @@ export class RpcWorkerPool implements WorkerPool, WorkerPoolRpc {
     ...args: string[]
   ): Promise<O> {
     const internal_job_ref = this.next_job_ref++;
-
-    // The external_message_identifier is provided for feedback purpose only.
     const employee = this.getWorker();
     const promise = new Promise<O>((resolve, reject) => {
       employee.in_flight_commands.set(internal_job_ref, {
@@ -172,7 +132,6 @@ export class RpcWorkerPool implements WorkerPool, WorkerPoolRpc {
         break;
       case 'leastbusy':
       default:
-        // eslint-disable-next-line no-case-declarations
         let min = Number.POSITIVE_INFINITY;
         for (let i = 0; i < this.size; i++) {
           const worker = this.employees[i];
@@ -194,31 +153,21 @@ export class RpcWorkerPool implements WorkerPool, WorkerPoolRpc {
     msg: RpcResponse<any>,
     employee_number: number
   ): void {
-    // Each worker is represented as an object with the worker instance,
-    // a map of in-flight commands, and the worker's employee_number.
     const worker = this.employees[employee_number];
-
-    // Convert the message id to a number to use as a reference to the job.
     const internal_job_ref = Number(msg.id);
-
-    // Get the in-flight command corresponding to the job reference.
     const internal_job = worker.in_flight_commands.get(internal_job_ref);
 
-    // If there's no corresponding in-flight command, log an error and return.
     if (!internal_job) {
       const error = new Error(
         `No in-flight command found for job ref: ${internal_job_ref}`
       );
-      this.verbosity && console.error(error);
+      this._verbose && console.error(error);
       throw error;
     }
 
     const { resolve, reject, external_message_identifier } = internal_job;
-
-    // Delete the in-flight command from the worker's map as it's being processed.
     worker.in_flight_commands.delete(internal_job_ref);
 
-    // Process the result or error from the RPC response message.
     const result: unknown = msg?.result ?? null;
     const error: RpcResponseError | null = msg?.error || null;
     if (!error && result != null) {
@@ -233,7 +182,6 @@ export class RpcWorkerPool implements WorkerPool, WorkerPoolRpc {
     result: unknown,
     external_message_identifier: number | string
   ): void {
-    // Wrap the result in an RpcRight object and resolve the promise with it.
     resolve(baseRpcResponseRight(result)(external_message_identifier));
   }
 
@@ -241,50 +189,29 @@ export class RpcWorkerPool implements WorkerPool, WorkerPoolRpc {
     reject: (reason?: unknown) => void,
     error: RpcResponseError<unknown> | null
   ): void {
-    // Reject the promise with the error.
     reject(error || 'An unknown error occurred');
   }
 
-  // private verbosity: boolean;
-  get verbosity(): boolean {
-    return this._verbose;
-  }
-
-  set verbosity(VERBOSE: boolean) {
-    this._verbose = VERBOSE;
+  private tsnodeWorkerGenerator(
+    dirname: string,
+    employee_number: number,
+    worker: typeof Worker
+  ): Worker {
+    const workerPath = join(dirname, 'worker.ts');
+    return new worker(
+      `
+      require('ts-node/register');
+      require(require('worker_threads').workerData.runThisFileInTheWorker);
+      `,
+      {
+        eval: true,
+        workerData: {
+          runThisFileInTheWorker: workerPath,
+          workerAsset: employee_number,
+        },
+      }
+    );
   }
 }
 
 export default RpcWorkerPool;
-
-/**
- *
- * // HACK: This is a hack to work around the fact that the
- * // HACK: Worker constructor does not support ts_node
- * @param dirname
- * @param employee_number
- * @param worker
- * @returns
- */
-export function tsnodeWorkerGenerator(
-  dirname: string,
-  employee_number: number,
-  worker: typeof Worker
-): Worker {
-  const SCRIPT_FILE_URI = join(
-    `${dirname}/worker.${existsSync(`${dirname}/worker.ts`) ? 'ts' : 'js'}`
-  );
-  return new worker(
-    `
-  require('ts-node/register');
-  require(require('worker_threads').workerData.runThisFileInTheWorker);
-`,
-    {
-      eval: true,
-      workerData: {
-        runThisFileInTheWorker: SCRIPT_FILE_URI, // '/path/to/worker-script.ts'
-        workerAsset: employee_number,
-      },
-    }
-  );
-}
