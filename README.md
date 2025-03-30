@@ -1,175 +1,91 @@
 # RPC Worker Pool
 
+A high-performance, scalable RPC worker pool service implementing the Actor Model for distributed task processing.
+
 ## Overview
 
-The RPC Worker Pool is a robust, multi-threaded Remote Procedure Call (RPC) system implemented in Node.js and TypeScript. It leverages the Actor Model pattern for task queue management and is designed to handle high-volume concurrent tasks efficiently. The system utilizes Node.js worker threads to take full advantage of multi-core processors, making it ideal for CPU-intensive or I/O-bound operations.
+The RPC Worker Pool provides a way to distribute computational tasks across multiple worker threads, improving performance and resource utilization. It supports multiple load balancing strategies and provides a JSON-RPC 2.0 compatible interface.
+
+## Features
+
+- Multiple worker threads for parallel task processing
+- Several load balancing strategies (round-robin, random, least-busy)
+- JSON-RPC 2.0 compatible API
+- HTTP and TCP interfaces
+- Type-safe implementations with TypeScript
+
+## Installation
+
+This package is part of the monorepo-one repository. To use it:
+
+```bash
+# From the monorepo root
+# IMPORTANT: Always use Rush commands within monorepo-one
+rush update
+rush build
+```
+
+> **IMPORTANT: Package Manager Policy**
+>
+> - Inside monorepo-one: Use ONLY Rush commands (rush add -m -p, rush update)
+> - Outside monorepo-one: Use ONLY pnpm/pnpx commands (pnpm add, pnpx)
+> - NEVER use npm, yarn, or npx anywhere
+> - NEVER use pnpm directly inside monorepo-one when a rush command exists for the same purpose
+
+## Usage
+
+### Starting the Server
+
+```bash
+rushx server <http-endpoint:port> <actor-endpoint:port> <threads> <strategy>
+```
+
+Example:
+
+```bash
+rushx server 0.0.0.0:8010 0.0.0.0:7010 4 roundrobin
+```
+
+### Making RPC Requests
+
+You can make HTTP requests to the server:
+
+```bash
+curl "http://localhost:8010/helloWorld/World"
+```
+
+Or use the provided client:
+
+```bash
+rushx ts-node src/base/client.ts localhost 8010 helloWorld World
+```
+
+## Available Commands
+
+- `helloWorld`: Returns a greeting message
+- `echo`: Returns the parameters it received
+- `status`: Returns the server's operational status
+- `info`: Returns information about the server
 
 ## Architecture
 
-```mermaid
-graph TB
-    Client[Client] --> RPC[RPC Interface]
-    RPC --> Pool[Worker Pool]
-    Pool --> W1[Worker 1]
-    Pool --> W2[Worker 2]
-    Pool --> W3[Worker 3]
-
-    subgraph Pipeline
-    W1 --> PS1[Pipeline Stage 1]
-    PS1 --> PS2[Pipeline Stage 2]
-    PS2 --> PS3[Pipeline Stage 3]
-    end
-
-    subgraph Components
-    C1[Command System]
-    C2[Error Handling]
-    C3[Configuration]
-    end
-
-    W1 --> Components
-    W2 --> Components
-    W3 --> Components
-```
-
-## Key Components
-
-### Core System
-
-1. **RPC Worker Pool (`/core`)**
-   - `RpcWorkerPool.ts`: Main pool management system
-   - `RpcWorkerPool-slim.ts`: Lightweight version for reduced resource usage
-   - `workerGenerator.ts`: Worker thread creation and management
-
-2. **Server Implementation (`/server`)**
-   - Modular pipeline architecture
-   - Configuration management system
-   - Robust API layer with error handling
-   - Job queue management
-   - TCP server implementation
-
-3. **Pipeline System (`/Pipe`)**
-   - Multi-stage data processing pipeline
-   - Composable processing steps
-   - Process wrapping/unwrapping capabilities
-   - Custom stage implementation support
-
-4. **Command System (`/commands`)**
-   - Extensible command framework
-   - Command creation tools
-   - RPC connector factory
-   - Utility methods for command handling
-
-### Communication Protocol
-
-The project implements the JSON-RPC 2.0 protocol for communication between:
-
-- Main thread and worker threads
-- External clients and the RPC server
-- Internal system components
-
-### Type System
-
-Comprehensive TypeScript type definitions are provided in the `/types` directory:
-
-- JSON-RPC 2.0 specification types
-- Worker pool operation types
-- Command and message types
-- Pipeline stage types
-- MCP (Model Context Protocol) schema integration
-
-## Configuration
-
-The system can be configured through:
-
-- Environment variables
-- Command line arguments
-- Configuration files
-- Docker environment settings
-
-## Project Dependencies
-
-### Core Dependencies
-
-```json
-{
-  "chalk": "4.1.2",
-  "@luxcium/bigintstring": "workspace:*",
-  "@luxcium/tools": "workspace:*",
-  "@luxcium/redis-services": "workspace:*",
-  "mapping-tools": "workspace:*",
-  "@luxcium/phash-compute": "workspace:*"
-}
-```
-
-## Getting Started
-
-### Prerequisites
-
-- Node.js v22 or later
-- pnpm package manager
-- Docker (optional, for containerized deployment)
-
-### Installation
-
-1. Clone the repository:
-
-  ```bash
-  git clone <repository-url>
-  cd rpc-worker-pool
-  ```
-
-2. Install dependencies:
-
-  ```bash
-  pnpm install
-  ```
-
-3. Build the project:
-
-  ```bash
-  pnpm run build
-  ```
-
-### Docker Deployment
-
-Build the Docker image:
-
-```bash
-pnpm run docker:build
-```
-
-Run the server:
-
-```bash
-pnpm run docker:live:server
-```
-
-Run the actor:
-
-```bash
-pnpm run docker:live:actor
-```
-
-Stop the services:
-
-```bash
-pnpm run stop:docker:live
-```
+This service implements the Actor Model pattern where actors communicate through message passing. See [architecture.md](docs/internal/architecture.md) for more details.
 
 ## Development
 
-### Available Scripts
+### Scripts
 
-- `pnpm run build`: Build the project
-- `pnpm run debug`: Run in debug mode with inspector
-- `pnpm run lint`: Run ESLint checks
-- `pnpm run lint:fix`: Fix ESLint issues
-- `pnpm run prettier`: Format code with Prettier
+- `rushx server`: Start the server
+- `rushx client`: Run the test client
+- `rushx test:commands`: Run tests for all available commands
 
-## Contributing
+### Documentation
 
-Please read [CONTRIBUTING.md](./CONTRIBUTING.md) for details on our code of conduct and the process for submitting pull requests.
+- [API Reference](docs/public/api-reference.md)
+- [Usage Examples](docs/public/usage-examples.md)
+- [Internal Architecture](docs/internal/architecture.md)
+- [Design Decisions](docs/internal/design-decisions.md)
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+MIT

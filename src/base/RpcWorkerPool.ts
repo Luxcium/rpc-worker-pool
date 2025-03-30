@@ -14,18 +14,80 @@ import type {
 } from './types';
 import { maxSize, Strategies, strategies, supportedStrategies } from './utils';
 
+/**
+ * RPC Worker Pool implementation using the Actor Model pattern.
+ *
+ * This class manages a pool of worker threads and distributes RPC requests
+ * across them according to the selected strategy (round-robin, random, or least-busy).
+ * It handles communication between clients and worker threads, error handling,
+ * and result collection.
+ *
+ * @remarks
+ * The worker pool is designed with performance and scalability in mind.
+ * It automatically adjusts the number of worker threads based on available CPU cores
+ * if not explicitly specified.
+ *
+ * @example
+ * ```typescript
+ * const pool = RpcWorkerPool.create(4, 'roundrobin', true);
+ * const result = await pool.exec('helloWorld', 1, 'World');
+ * console.log(result); // "Hello, World!"
+ * ```
+ *
+ * @internal
+ * Architecture note: This class implements the Actor Model pattern where actors
+ * (worker threads) communicate through message passing. The main thread acts as
+ * a coordinator, routing messages to and from the workers.
+ */
 export class RpcWorkerPool implements WorkerPool, WorkerPoolRpc {
+  /**
+   * The number of worker threads in the pool.
+   * @private
+   */
   private readonly size: number;
+
+  /**
+   * The strategy used to distribute tasks among workers.
+   * @private
+   */
   private readonly strategy: Strategies;
+
+  /**
+   * Whether to enable verbose logging.
+   * @private
+   */
   private _verbose: boolean;
+
+  /**
+   * Index for round-robin task distribution.
+   * @private
+   */
   private rr_index: number;
+
+  /**
+   * Reference counter for job IDs.
+   * @private
+   */
   private next_job_ref: number;
+
+  /**
+   * Array of worker information objects.
+   * @private
+   */
   private readonly employees: {
     worker: Worker;
     in_flight_commands: Map<number, any>;
     employee_number: number;
   }[];
 
+  /**
+   * Creates a new RPC Worker Pool instance.
+   *
+   * @param size - The number of worker threads to create (defaults to number of CPU cores)
+   * @param strategy - The strategy for distributing tasks (defaults to 'leastbusy')
+   * @param verbosity - Whether to enable verbose logging
+   * @returns A new RpcWorkerPool instance
+   */
   public static create(
     size = 0,
     strategy: Strategies = strategies.leastbusy,
