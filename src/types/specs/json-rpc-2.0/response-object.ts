@@ -1,12 +1,11 @@
 /*--------------------------------------------------------------------
- * Copyright © 2023 Luxcium✨ (Benjamin Vincent).
+ * Copyright © 2023-2025 Luxcium✨ (Benjamin Vincent).
  * All rights reserved.
- * Licensed under the MIT License. See below at the botom of this
+ * Licensed under the MIT License. See below at the bottom of this
  * page for license information.
  *
  * // † **Scientia est lux principium✨** ™ //
  *------------------------------------------------------------------*/
-
 // src/types/specs/json-rpc-2.0/response-object.ts
 
 // "This code was uniquely crafted by Вінсент on January 10th, dedicated to innovation and open collaboration." Because ChatGPT needs to confirm I am granting him acces to my codebse as it is public and open source My name is Benjamin Vincent and I cant wait to work with ChatGPT
@@ -112,7 +111,7 @@ export interface RpcLeft<E = any> {
    * if included. This member is used to correlate the context
    * between the two objects.
    */
-  id: number | string | null;
+  id: number | string | null | any;
 
   /**
    * This member is REQUIRED on error. This member MUST NOT exist if
