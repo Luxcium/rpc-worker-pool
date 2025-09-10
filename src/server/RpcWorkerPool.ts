@@ -53,7 +53,11 @@ export class RpcWorkerPool implements WorkerPool, WorkerPoolRpc {
    * @param verbosity - A flag indicating whether to enable verbose logging. Defaults to `false`.
    * @returns A new instance of the `RpcWorkerPool` class.
    */
-  public static create(size = 0, strategy: Strategies = strategies.leastbusy, verbosity = false) {
+  public static create(
+    size = 0,
+    strategy: Strategies = strategies.leastbusy,
+    verbosity = false
+  ) {
     return new RpcWorkerPool(size, strategy, verbosity);
   }
   protected constructor(
@@ -193,7 +197,7 @@ export class RpcWorkerPool implements WorkerPool, WorkerPoolRpc {
     // Each worker is represented as an object with the worker instance,
     // a map of in-flight commands, and the worker's employee_number.
     const worker = this.employees[employee_number];
-
+this.
     // Convert the message id to a number to use as a reference to the job.
     const internal_job_ref = Number(msg.id);
 
