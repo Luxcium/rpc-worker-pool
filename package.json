@@ -60,7 +60,7 @@
     "@types/heft-jest": "~1.0.3",
     "@types/jest": "~29.5.12",
     "@types/mime-types": "~2.1.1",
-    "@types/node": "~24.3.1",
+    "@types/node": "~24.10.0",
     "@types/react": "~19.1.1",
     "@types/react-dom": "~19.1.2",
     "chai": "~4.3.7",
@@ -86,9 +86,14 @@
     "ts-node": "~10.9.2",
     "tsconfig-paths": "~4.2.0",
     "tslib": "~2.6.2",
-    "typescript": "~5.9.2",
+    "typescript": "~5.9.3",
     "typescript-eslint": "~8.12.2",
-    "chalk": "4.1.2"
+    "chalk": "4.1.2",
+    "typedoc": "~0.28.14",
+    "typedoc-plugin-coverage": "~4.0.2",
+    "typedoc-plugin-missing-exports": "~4.1.2",
+    "typedoc-plugin-replace-text": "~4.2.0",
+    "typedoc-plugin-zod": "~1.4.3"
   },
   "packageManager": "pnpm@7.18.2"
 }
